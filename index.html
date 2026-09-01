@@ -1209,7 +1209,7 @@ async function cargarInventario(){
         tb:db&&db.tb!=null?db.tb:(item.tb||8),
         ts:db&&db.ts!=null?db.ts:(item.ts||25),
         ss:db&&db.ss!=null?db.ss:0,
-        cmin:db&&db.compra_minima!=null?db.compra_minima:(item.cmin||0),
+        cmin:db&&db.compra_minima>0?db.compra_minima:(item.cmin||0),
         palt:db&&db.proveedor_alt?db.proveedor_alt:(item.palt||'')
       };
     });
@@ -2147,12 +2147,14 @@ function generarTexto(fmt){
       provOrden.forEach(function(pv){
         t+='\n*'+pv.toUpperCase()+'*\n';
         grpP[pv].forEach(function(i){
-          var stockTxt=i.s>0?'(stock: '+i.s+' '+i.u+')':'Sin stock';
-          var uLow=(i.u||'').toLowerCase();
-          var medidas=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack','band','bandeja','saco','bolsa'];
-          var esMedida=medidas.some(function(m){return uLow===m||uLow.indexOf(m)===0;});
-          var cantStr=esMedida?i.p+' '+i.u:i.p+' und';
-          t+='  '+cantStr+' '+i.n+' '+stockTxt+'\n';
+
+          var _uLow=(i.u||'').toLowerCase();
+          var _meds=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack','band','bandeja','saco','bolsa'];
+          var _esMed=_meds.some(function(m){return _uLow===m||_uLow.indexOf(m)===0;});
+          var cantStr=_esMed?i.p+' '+i.u:i.p+' und';
+          var stockTxt=i.s>0?'Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'?' ('+i.u+')':''):'Sin stock';
+          var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin)?'\n    ⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → alternativo: '+(i.palt||'?'):'';
+          t+='  '+cantStr+' '+i.n+' '+stockTxt+_cminTxt+'\n';
         });
       });
     }
@@ -2171,12 +2173,14 @@ function generarTexto(fmt){
         if(!grpC[catObj.nombre])return;
         t+='\n*'+catObj.nombre.toUpperCase()+'*\n';
         grpC[catObj.nombre].forEach(function(i){
-          var stockTxt=i.s>0?'(stock: '+i.s+' '+i.u+')':'Sin stock';
-          var uLow=(i.u||'').toLowerCase();
-          var medidas=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack','band','bandeja','saco','bolsa'];
-          var esMedida=medidas.some(function(m){return uLow===m||uLow.indexOf(m)===0;});
-          var cantStr=esMedida?i.p+' '+i.u:i.p+' und';
-          t+='  '+cantStr+' '+i.n+' '+stockTxt+'\n';
+
+          var _uLow=(i.u||'').toLowerCase();
+          var _meds=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack','band','bandeja','saco','bolsa'];
+          var _esMed=_meds.some(function(m){return _uLow===m||_uLow.indexOf(m)===0;});
+          var cantStr=_esMed?i.p+' '+i.u:i.p+' und';
+          var stockTxt=i.s>0?'Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'?' ('+i.u+')':''):'Sin stock';
+          var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin)?'\n    ⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → alternativo: '+(i.palt||'?'):'';
+          t+='  '+cantStr+' '+i.n+' '+stockTxt+_cminTxt+'\n';
         });
       });
     }
@@ -2259,6 +2263,10 @@ function renderPedidoBody(){
     });
   }
   document.getElementById('pedBody').innerHTML=h;
+  // Auto-actualizar texto exportado
+  if(!textoEditadoManual){
+    document.getElementById('eBox').value=generarTexto(formatoPedido)||'Sin ítems a pedir.';
+  }
 }
 
 function cambiarFormato(fmt){
@@ -2561,6 +2569,12 @@ function chgUnif(idx,delta){
   itemsUnificados[idx].p=Math.max(0,itemsUnificados[idx].p+delta);
   renderVistaUnif();
 }
+function editProvUnif(idx,val){
+  if(!itemsUnificados[idx])return;
+  itemsUnificados[idx].pr=val;
+  generarTextoUnificado(); // update text only, no re-render to keep dropdowns stable
+}
+
 function editUnif(idx,val){
   if(!itemsUnificados[idx])return;
   var n=parseInt(val);
