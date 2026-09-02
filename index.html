@@ -2237,11 +2237,14 @@ function renderPedidoBody(){
       h+='<div style="margin-bottom:18px"><div class="ped-prov" style="color:#FCD34D;background:rgba(217,119,6,.12)">🏪 '+pv.toUpperCase()+'</div>';
       grpP[pv].forEach(function(i){
         var nombre=i.u&&i.u!=='Unid'&&i.u!=='unid'?i.n+' '+i.u:i.n;
+        var _stockSpan=i.s>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'&&i.u!=='unid'?' ('+i.u+')':'')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
         var _cminW='';
         if(i.cmin>0&&i.p>0&&i.p<i.cmin){
-          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+'<br>→ Alternativo: <b>'+(i.palt||'?')+'</b></div>';
+          var _altProv=i.palt||'Botillería Las Copas';
+          var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_altProv.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">Cambiar a '+_altProv+'</button>';
+          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → '+_altProv+_btnCambiar+'</div>';
         }
-        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
+        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_stockSpan+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
       });
       h+='</div>';
     });
@@ -2253,11 +2256,14 @@ function renderPedidoBody(){
       h+='<div style="margin-bottom:18px"><div class="ped-prov" style="color:'+cm.co+';background:'+cm.bg+'">'+catObj.emoji+' '+catObj.nombre.toUpperCase()+'</div>';
       grpC[catObj.nombre].forEach(function(i){
         var nombre=i.u&&i.u!=='Unid'&&i.u!=='unid'?i.n+' '+i.u:i.n;
+        var _stockSpan=i.s>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'&&i.u!=='unid'?' ('+i.u+')':'')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
         var _cminW='';
         if(i.cmin>0&&i.p>0&&i.p<i.cmin){
-          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+'<br>→ Alternativo: <b>'+(i.palt||'?')+'</b></div>';
+          var _altProv=i.palt||'Botillería Las Copas';
+          var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_altProv.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">Cambiar a '+_altProv+'</button>';
+          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → '+_altProv+_btnCambiar+'</div>';
         }
-        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
+        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_stockSpan+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
       });
       h+='</div>';
     });
@@ -2278,6 +2284,15 @@ function cambiarFormato(fmt){
   textoEditadoManual=false;
   document.getElementById('eBox').value=generarTexto(fmt)||'Sin ítems a pedir.';
 }
+function cambiarProvPedido(id, nuevoProv){
+  var item=data.find(function(i){return i.id===id;});
+  if(!item)return;
+  item.pr=nuevoProv;
+  persistir(item);
+  renderPedidoBody();
+  showToast('✅ Proveedor cambiado a '+nuevoProv);
+}
+
 function restaurarTexto(){textoEditadoManual=false;document.getElementById('eBox').value=generarTexto(formatoPedido)||'Sin ítems a pedir.';}
 function copiarTexto(){var t=document.getElementById('eBox').value;if(!t)return;navigator.clipboard&&navigator.clipboard.writeText(t);showToast('📋 Copiado');}
 function enviarWhatsapp(){var t=document.getElementById('eBox').value;if(!t)return;window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');}
@@ -2629,15 +2644,28 @@ function renderVistaUnif(){
   }
 
   function renderItem(i,idx){
-    var _uLow=(i.u||'').toLowerCase();var _med=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];var _esMed=_med.some(function(m){return _uLow===m||_uLow.indexOf(m)===0;});var stockStr=i.stock>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.stock+(_esMed?' '+i.u:' und')+(_esMed?'':' ('+i.u+')')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
-    var h='<div style="display:flex;align-items:center;gap:6px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.06)">';
-    // Controls
-    h+='<button onclick="chgUnif('+idx+',-1)" style="width:28px;height:28px;background:var(--dark3);border:1px solid var(--border);border-radius:6px 0 0 6px;color:var(--gold4);font-size:16px;cursor:pointer;flex-shrink:0">−</button>';
-    h+='<input type="number" min="0" value="'+i.p+'" onchange="editUnif('+idx+',this.value)" style="width:44px;height:28px;background:var(--dark4);border-top:1px solid var(--border);border-bottom:1px solid var(--border);border-left:none;border-right:none;color:var(--gold4);font-size:14px;font-weight:700;text-align:center;outline:none">';
-    h+='<button onclick="chgUnif('+idx+',1)" style="width:28px;height:28px;background:var(--dark3);border:1px solid var(--border);border-radius:0 6px 6px 0;color:var(--gold4);font-size:16px;cursor:pointer;flex-shrink:0">+</button>';
+    var _uLow2=(i.u||'').toLowerCase();
+    var _meds2=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];
+    var _esMed2=_meds2.some(function(m){return _uLow2===m||_uLow2.indexOf(m)===0;});
+    var stockStr=i.stock>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.stock+' und'+(_esMed2?' ('+i.u+')':'')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
+    // Proveedor selector
+    var provOpts='<option value="">Sin proveedor</option>';
+    proveedoresCatalogo.forEach(function(p){provOpts+='<option value="'+p+'"'+(i.pr===p?' selected':'')+'>'+p+'</option>';});
+    var h='<div style="display:flex;align-items:flex-start;gap:6px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.06)">';
+    // Qty controls
+    h+='<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:center">';
+    h+='<div style="display:flex"><button onclick="chgUnif('+idx+',-1)" style="width:26px;height:26px;background:var(--dark3);border:1px solid var(--border);border-radius:6px 0 0 6px;color:var(--gold4);font-size:14px;cursor:pointer;flex-shrink:0">−</button>';
+    h+='<input type="number" min="0" value="'+i.p+'" onchange="editUnif('+idx+',this.value)" style="width:40px;height:26px;background:var(--dark4);border-top:1px solid var(--border);border-bottom:1px solid var(--border);border-left:none;border-right:none;color:var(--gold4);font-size:13px;font-weight:700;text-align:center;outline:none">';
+    h+='<button onclick="chgUnif('+idx+',1)" style="width:26px;height:26px;background:var(--dark3);border:1px solid var(--border);border-radius:0 6px 6px 0;color:var(--gold4);font-size:14px;cursor:pointer;flex-shrink:0">+</button></div>';
+    h+='<select onchange="editProvUnif('+idx+',this.value)" style="background:var(--dark3);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--gold4);font-size:11px;padding:3px 4px;width:100px;outline:none">'+provOpts+'</select>';
+    h+='</div>';
     // Info
     h+='<div style="flex:1;min-width:0">';
-    h+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+nombreFmtUnif(i)+areaTag(i)+stockStr+'</div>';
+    h+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+nombreFmtUnif(i)+'</div>';
+    h+='<div>'+areaTag(i)+stockStr+'</div>';
+    if(i.cmin>0&&i.p>0&&i.p<i.cmin){
+      h+='<div style="font-size:11px;color:#FBBF24;margin-top:2px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'?')+' → <b>'+(i.palt||'?')+'</b></div>';
+    }
     h+='</div></div>';
     return h;
   }
