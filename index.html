@@ -333,6 +333,10 @@ input::placeholder{color:#5a4a30}
     <div style="font-size:11px;color:var(--muted);margin-bottom:12px" id="pedFecha"></div>
     <div class="flbl">Responsable del pedido (opcional)</div>
     <input class="finp" id="pedResp" placeholder="Nombre de quien hace el pedido" oninput="actualizarTextoPedido()">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="chip" id="fmtCat" onclick="cambiarOrdenPedido('categoria')">📦 Categoría</button>
+      <button class="chip on" id="fmtProv" onclick="cambiarOrdenPedido('proveedor')">🏪 Proveedor</button>
+    </div>
     <div id="pedBody"></div>
     <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -2213,8 +2217,11 @@ function abrirPedido(){
   document.getElementById('ordCat').classList.add('on');
   document.getElementById('ordProv').classList.remove('on');
   formatoPedido='texto';
+  ordenPedido='proveedor';
   document.getElementById('fmtTexto').classList.add('on');
   document.getElementById('fmtTabla').classList.remove('on');
+  var fc=document.getElementById('fmtCat'); if(fc) fc.classList.remove('on');
+  var fp=document.getElementById('fmtProv'); if(fp) fp.classList.add('on');
   renderPedidoBody();
   document.getElementById('eBox').value=generarTexto('texto')||'Sin ítems a pedir.';
   abrir('mPedido');
@@ -2283,6 +2290,13 @@ function renderPedidoBody(){
   if(!textoEditadoManual){
     document.getElementById('eBox').value=generarTexto(formatoPedido)||'Sin ítems a pedir.';
   }
+}
+
+function cambiarOrdenPedido(orden){
+  ordenPedido=orden;
+  document.getElementById('fmtCat').classList.toggle('on',orden==='categoria');
+  document.getElementById('fmtProv').classList.toggle('on',orden==='proveedor');
+  renderPedidoBody();
 }
 
 function cambiarFormato(fmt){
@@ -2597,9 +2611,7 @@ function chgUnif(idx,delta){
 function editProvUnif(idx,val){
   if(!itemsUnificados[idx])return;
   itemsUnificados[idx].pr=val;
-  generarTextoUnificado();
-  // Update the select display without full re-render
-  renderVistaUnif();
+  generarTextoUnificado(); // auto-update text
 }
 
 function editUnif(idx,val){
@@ -2648,7 +2660,7 @@ function renderUnificado(){
 }
 
 function renderVistaUnif(){
-  cargarProveedoresCatalogo(); // asegurar catálogo cargado
+  if(!proveedoresCatalogo||proveedoresCatalogo.length===0) cargarProveedoresCatalogo();
   var items=itemsUnificados;
 
   function areaTag(i){
