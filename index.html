@@ -1076,7 +1076,7 @@ var PROVEEDORES_DEFAULT = ["Bidfood", "Botillería Las Copas", "Botellas", "CCU"
 var provActivo = 'Todos';
 var soloPedido = false;
 var formatoPedido = 'texto';
-var ordenPedido = 'categoria'; // 'categoria' | 'proveedor'
+var ordenPedido = 'proveedor'; // 'categoria' | 'proveedor'
 var textoEditadoManual = false;
 var histTab = 'snap';
 
@@ -2241,8 +2241,12 @@ function renderPedidoBody(){
         var _cminW='';
         if(i.cmin>0&&i.p>0&&i.p<i.cmin){
           var _altProv=i.palt||'Botillería Las Copas';
-          var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_altProv.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">Cambiar a '+_altProv+'</button>';
-          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → '+_altProv+_btnCambiar+'</div>';
+          var _provActual=i.pr||'CCU';
+          var _esPrincipal=_provActual!==_altProv;
+          var _btnLabel=_esPrincipal?'Cambiar a '+_altProv:'↩ Volver a CCU';
+          var _provDestino=_esPrincipal?_altProv:(i.palt&&i.palt!==_altProv?i.palt:'CCU');
+          var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_provDestino.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">'+_btnLabel+'</button>';
+          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con CCU → '+_altProv+_btnCambiar+'</div>';
         }
         h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_stockSpan+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
       });
@@ -2260,8 +2264,12 @@ function renderPedidoBody(){
         var _cminW='';
         if(i.cmin>0&&i.p>0&&i.p<i.cmin){
           var _altProv=i.palt||'Botillería Las Copas';
-          var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_altProv.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">Cambiar a '+_altProv+'</button>';
-          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → '+_altProv+_btnCambiar+'</div>';
+          var _provActual=i.pr||'CCU';
+          var _esPrincipal=_provActual!==_altProv;
+          var _btnLabel=_esPrincipal?'Cambiar a '+_altProv:'↩ Volver a CCU';
+          var _provDestino=_esPrincipal?_altProv:(i.palt&&i.palt!==_altProv?i.palt:'CCU');
+          var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_provDestino.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">'+_btnLabel+'</button>';
+          _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con CCU → '+_altProv+_btnCambiar+'</div>';
         }
         h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_stockSpan+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
       });
@@ -2636,6 +2644,7 @@ function renderUnificado(){
 }
 
 function renderVistaUnif(){
+  cargarProveedoresCatalogo(); // asegurar catálogo cargado
   var items=itemsUnificados;
 
   function areaTag(i){
@@ -2649,8 +2658,12 @@ function renderVistaUnif(){
     var _esMed2=_meds2.some(function(m){return _uLow2===m||_uLow2.indexOf(m)===0;});
     var stockStr=i.stock>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.stock+' und'+(_esMed2?' ('+i.u+')':'')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
     // Proveedor selector
+    // Asegurar que el proveedor actual aparece aunque no esté en el catálogo
+    var provActual=i.pr||'';
+    var catConActual=proveedoresCatalogo.slice();
+    if(provActual&&!catConActual.includes(provActual)) catConActual.unshift(provActual);
     var provOpts='<option value="">Sin proveedor</option>';
-    proveedoresCatalogo.forEach(function(p){provOpts+='<option value="'+p+'"'+(i.pr===p?' selected':'')+'>'+p+'</option>';});
+    catConActual.forEach(function(p){provOpts+='<option value="'+p+'"'+(p===provActual?' selected':'')+'>'+p+'</option>';});
     var h='<div style="display:flex;align-items:flex-start;gap:6px;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.06)">';
     // Qty controls
     h+='<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:center">';
