@@ -2722,7 +2722,11 @@ function renderVistaUnif(){
     });
   }
   document.getElementById('unificadoBody').innerHTML=h;
+  generarTextoUnificado();
+}
 
+function generarTextoUnificado(){
+  var items=itemsUnificados.filter(function(i){return i.p>0;});
   // Generate text — proveedor en MAYÚSCULA sin emoji (negrita en WhatsApp con *)
   var f=new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'});
   var t='★ NEW YORK BAR — PEDIDO UNIFICADO\n📅 '+f+'\n';
