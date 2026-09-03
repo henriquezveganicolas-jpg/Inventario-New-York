@@ -1076,7 +1076,7 @@ var PROVEEDORES_DEFAULT = ["Bidfood", "Botillería Las Copas", "Botellas", "CCU"
 var provActivo = 'Todos';
 var soloPedido = false;
 var formatoPedido = 'texto';
-var ordenPedido = 'proveedor'; // 'categoria' | 'proveedor'
+var ordenPedido='proveedor'; // 'categoria' | 'proveedor'
 var textoEditadoManual = false;
 var histTab = 'snap';
 
@@ -2153,7 +2153,8 @@ function generarTexto(fmt){
           var _esMed=_meds.some(function(m){return _uLow===m||_uLow.indexOf(m)===0;});
           var cantStr=_esMed?i.p+' '+i.u:i.p+' und';
           var stockTxt=i.s>0?'Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'?' ('+i.u+')':''):'Sin stock';
-          var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin)?'\n    ⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → alternativo: '+(i.palt||'?'):'';
+          var _altP=i.palt||'Botillería Las Copas';
+          var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin&&i.pr!==_altP)?'\n    ⚠️ Mínimo '+i.cmin+' und con CCU → alternativo: '+_altP:'';
           t+='  '+cantStr+' '+i.n+' '+stockTxt+_cminTxt+'\n';
         });
       });
@@ -2179,7 +2180,8 @@ function generarTexto(fmt){
           var _esMed=_meds.some(function(m){return _uLow===m||_uLow.indexOf(m)===0;});
           var cantStr=_esMed?i.p+' '+i.u:i.p+' und';
           var stockTxt=i.s>0?'Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'?' ('+i.u+')':''):'Sin stock';
-          var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin)?'\n    ⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'proveedor')+' → alternativo: '+(i.palt||'?'):'';
+          var _altP=i.palt||'Botillería Las Copas';
+          var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin&&i.pr!==_altP)?'\n    ⚠️ Mínimo '+i.cmin+' und con CCU → alternativo: '+_altP:'';
           t+='  '+cantStr+' '+i.n+' '+stockTxt+_cminTxt+'\n';
         });
       });
@@ -2595,7 +2597,9 @@ function chgUnif(idx,delta){
 function editProvUnif(idx,val){
   if(!itemsUnificados[idx])return;
   itemsUnificados[idx].pr=val;
-  generarTextoUnificado(); // update text only, no re-render to keep dropdowns stable
+  generarTextoUnificado();
+  // Update the select display without full re-render
+  renderVistaUnif();
 }
 
 function editUnif(idx,val){
