@@ -1268,6 +1268,7 @@ async function sincronizarTodos(){
 async function persistir(item){
   try{
     var payload = {
+      nombre:item.n||'',
       stock:parseInt(item.s)||0, a_pedir:parseInt(item.p)||0,
       proveedor:item.pr||'', notas:item.nt||'',
       tc:parseInt(item.tc)||3, tb:parseInt(item.tb)||8,
