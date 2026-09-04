@@ -242,6 +242,7 @@ input::placeholder{color:#5a4a30}
         </div>
         <button class="hbtn" onclick="abrirHistorial()">📅</button>
         <button class="hbtn" onclick="abrirCentral()" style="color:#4ADE80;border-color:rgba(74,222,128,.3)" title="Central de Pedidos">🗂️</button>
+        <button class="hbtn" id="btnSheets" onclick="abrirSheets()" title="Google Sheets" style="color:#4ADE80;border-color:rgba(74,222,128,.3);display:none">📊</button>
         <button class="hbtn" onclick="abrirProvCat()" title="Proveedores">🏪</button>
         <button class="hbtn" onclick="abrirCatCat()" title="Categorías">🏷️</button>
         <button class="hbtn" onclick="abrirNuevo()">＋</button>
@@ -1155,6 +1156,8 @@ async function entrarArea(areaId){
   document.getElementById('invTitle').textContent=areaActual.emoji+' '+areaActual.nombre.toUpperCase();
   document.getElementById('invSub').textContent=(sesion.admin||sesion.area===areaId?'PUEDES EDITAR':'SOLO LECTURA')+' · '+sesion.nombre.toUpperCase();
   catActiva='Todas';provActivo='Todos';soloPedido=false;cambiosSinGuardar=false;
+  var btnSh=document.getElementById('btnSheets');
+  if(btnSh) btnSh.style.display=(sesion&&(sesion.admin||sesion.ver_sheets))?'inline-flex':'none';
   document.getElementById('searchInput').value='';
   await cargarInventario();
 }
@@ -1167,6 +1170,10 @@ function volverAreas(){
   areaActual=null;
   mostrar('areaScreen');
 }
+function abrirSheets(){
+  window.open('https://docs.google.com/spreadsheets/d/1ooJISR0oqTnJlSR6Xh-RiKGalL_OKlo_tjKZp9dtAy8/edit','_blank');
+}
+
 function sinAcceso(area){
   alert('🔒 Acceso restringido\n\nNo tienes permiso para entrar a '+area+'.\nContacta al administrador si necesitas acceso.');
 }
