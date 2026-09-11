@@ -1227,10 +1227,11 @@ async function cargarInventario(){
     // Agregar items extras de Supabase que NO están en ITEMS_BASE (ej: creados desde la app)
     var baseIds=new Set(base.map(function(i){return i.id;}));
     rows.forEach(function(r){
-      if(!baseIds.has(r.item_id)&&r.item_id){
+      if(!baseIds.has(r.item_id)&&r.item_id&&r.nombre){
+        // Solo agregar si tiene nombre (evita items fantasma vacíos)
         data.push({
           id:r.item_id,
-          n:r.nombre||('Insumo '+r.item_id),
+          n:r.nombre,
           c:r.cat||'',u:r.unidad||'Unid',
           s:r.stock||0,p:r.a_pedir||0,
           pr:r.proveedor||'',nt:r.notas||'',
@@ -1238,6 +1239,13 @@ async function cargarInventario(){
           ss:r.ss||0,cmin:r.compra_minima||0,palt:r.proveedor_alt||''
         });
       }
+    });
+    // Deduplicar por id (por si acaso)
+    var seen={};
+    data=data.filter(function(i){
+      if(seen[i.id]) return false;
+      seen[i.id]=true;
+      return true;
     });
     // Items personalizados (id > base max)
     rows.forEach(function(r){
@@ -2056,11 +2064,14 @@ function editDir(id,field){
   if(isNaN(n)||n<0){showToast('Número inválido');return;}
   item[field]=n;persistir(item);renderLista();
 }
-function borrar(id){
+async function borrar(id){
   if(!puedeEditar()||!confirm('¿Eliminar este insumo?'))return;
   data=data.filter(function(i){return i.id!==id;});
-  sbDelete('inventario',{area:areaActual.id,item_id:id}).catch(console.error);
-  renderLista();showToast('🗑️ Eliminado');
+  try{
+    await sbDelete('inventario',{area:areaActual.id,item_id:id});
+  }catch(e){console.error('Error eliminando:',e);}
+  if(vistaActual==='tabla') renderTabla(); else renderLista();
+  showToast('🗑️ Eliminado');
 }
 function resetPedidos(){
   if(!puedeEditar()||!confirm('¿Reiniciar todos los pedidos a 0?'))return;
