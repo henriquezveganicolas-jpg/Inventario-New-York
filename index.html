@@ -1784,17 +1784,20 @@ function renderProvCatBody(){
     h='<div class="loader">Sin proveedores. Agrega el primero.</div>';
   } else {
     // Separar por tipo
-    var directos=proveedoresCatalogo.filter(function(p){return p.tipo!=='ruta';});
-    var ruta=proveedoresCatalogo.filter(function(p){return p.tipo==='ruta';}).sort(function(a,b){return (a.prioridad||0)-(b.prioridad||0);});
+    var directos=proveedoresCatalogo.filter(function(p){return typeof p==='string'||p.tipo!=='ruta';});
+    var ruta=proveedoresCatalogo.filter(function(p){return typeof p!=='string'&&p.tipo==='ruta';}).sort(function(a,b){return (a.prioridad||0)-(b.prioridad||0);});
     
     function renderGrupo(lista, titulo){
       if(!lista.length) return '';
       var gh='<div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--gold4);margin:12px 0 6px">'+titulo+'</div>';
       lista.forEach(function(p,i){
         var idx=proveedoresCatalogo.indexOf(p);
+        var pNom=typeof p==='string'?p:(p.nombre||p);
+        var pTipo=typeof p==='string'?'directo':(p.tipo||'directo');
+        var pPri=typeof p==='string'?0:(p.prioridad||0);
         gh+='<div style="display:flex;align-items:center;gap:8px;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px">';
-        if(p.tipo==='ruta') gh+='<span style="font-size:11px;color:var(--muted);min-width:20px;text-align:center;font-weight:700">#'+(p.prioridad||'—')+'</span>';
-        gh+='<div style="flex:1;font-size:14px;font-weight:600;color:var(--text)">'+p.nombre+'</div>';
+        if(pTipo==='ruta') gh+='<span style="font-size:11px;color:var(--muted);min-width:20px;text-align:center;font-weight:700">#'+(pPri||'—')+'</span>';
+        gh+='<div style="flex:1;font-size:14px;font-weight:600;color:var(--text)">'+pNom+'</div>';
         gh+='<button class="abtn" data-prov-idx="'+idx+'" onclick="editarProveedor(this)">✏️</button>';
         gh+='<button class="abtn d" data-prov-idx="'+idx+'" onclick="eliminarProveedor(this)">🗑️</button>';
         gh+='</div>';
