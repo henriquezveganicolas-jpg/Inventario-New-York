@@ -1482,8 +1482,11 @@ function makeDdProv(itemId, currentVal){
   h += '<button class="dd-btn" onclick="ddToggle(this)" data-value="'+currentVal+'">'+label+'</button>';
   h += '<div class="dd-list">';
   h += '<div class="dd-item'+(!currentVal?' sel':'')+' " data-val="" onclick="ddSelectEmpty(this,'+itemId+')">—</div>';
-  proveedoresCatalogo.forEach(function(p_raw){
-    h += '<div class="dd-item'+(p===currentVal?' sel':'')+'" data-val="'+p+'" onclick="ddSelect(this,'+itemId+',\'pr\',' + "'" + p + "'" + ',\''+p+'\')">'+p+'</div>';
+  proveedoresCatalogo.forEach(function(provItem){
+    var pn=typeof provItem==='string'?provItem:(provItem.nombre||'');
+    if(!pn)return;
+    var esc=pn.replace(/'/g,'\x27');
+    h += '<div class="dd-item'+(pn===currentVal?' sel':'')+'" data-val="'+esc+'" onclick="ddSelectProv(this,'+itemId+',\''+esc+'\')">'+pn+'</div>';
   });
   h += '</div></div>';
   return h;
