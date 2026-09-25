@@ -1877,7 +1877,8 @@ function poblarSelectPalt(selected){
   if(!sel)return;
   var opts='<option value="">Sin alternativo</option>';
   proveedoresCatalogo.forEach(function(p_raw){
-    var pn=getProvNombre(p);
+    var pn=typeof p_raw==='string'?p_raw:(p_raw.nombre||'');
+    if(!pn)return;
     opts+='<option value="'+pn+'"'+(selected===pn?' selected':'')+'>'+pn+'</option>';
   });
   sel.innerHTML=opts;
@@ -1889,7 +1890,8 @@ function poblarSelectProveedor(selected){
   if(!sel)return;
   var opts='<option value="">Sin proveedor</option>';
   proveedoresCatalogo.forEach(function(p_raw){
-    var pn=getProvNombre(p);
+    var pn=typeof p_raw==='string'?p_raw:(p_raw.nombre||'');
+    if(!pn)return;
     opts+='<option value="'+pn+'"'+(selected===pn?' selected':'')+'>'+pn+'</option>';
   });
   sel.innerHTML=opts;
@@ -1899,8 +1901,7 @@ function poblarSelectProveedor(selected){
 
 function sinTildes(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
 function getProveedores(){
-  // Use catalog as primary source, supplement with any data providers not in catalog
-  var provs=proveedoresCatalogo.slice();
+  var provs=proveedoresCatalogo.map(function(p){return typeof p==='string'?p:(p.nombre||'');}).filter(Boolean);
   data.forEach(function(i){
     if(i.pr&&i.pr.trim()&&provs.indexOf(i.pr.trim())===-1) provs.push(i.pr.trim());
   });
