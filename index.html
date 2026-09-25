@@ -2785,8 +2785,12 @@ function renderVistaUnif(){
     h+='<select onchange="editProvUnif('+idx+',this.value)" style="background:var(--dark3);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--gold4);font-size:11px;padding:3px 4px;width:100px;outline:none">'+provOpts+'</select>';
     h+='</div>';
     // Info
+    var _uLowU=(i.u||'').toLowerCase();
+    var _medsU=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];
+    var _esMedU=_medsU.some(function(m){return _uLowU===m||_uLowU.indexOf(m)===0;});
+    var stockStrU=i.stock>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock: '+i.stock+(_esMedU?' '+i.u:' und')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
     h+='<div style="flex:1;min-width:0">';
-    h+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+nombreFmtUnif(i)+'</div>';
+    h+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+nombreFmtUnif(i)+stockStrU+'</div>';
     if(i.cmin>0&&i.p>0&&i.p<i.cmin){
       h+='<div style="font-size:11px;color:#FBBF24;margin-top:2px">⚠️ Mínimo '+i.cmin+' und con '+(i.pr||'?')+' → <b>'+(i.palt||'?')+'</b></div>';
     }
