@@ -2803,7 +2803,7 @@ function chgUnif(idx,delta){
 function editProvUnif(idx,val){
   if(!itemsUnificados[idx])return;
   itemsUnificados[idx].pr=val;
-  generarTextoUnificado(); // auto-update text
+  renderVistaUnif(); // re-agrupa la lista y actualiza el texto
 }
 
 function editUnif(idx,val){
@@ -2933,53 +2933,84 @@ function renderVistaUnif(){
   generarTextoUnificado();
 }
 
+function _esUnidadMedida(u){
+  var uLow=(u||'').toLowerCase();
+  var med=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];
+  return med.some(function(m){return uLow===m||uLow.indexOf(m)===0;});
+}
+function _cantTxt(i){ return _esUnidadMedida(i.u)? i.p+' '+i.u : i.p+' und'; }
+function _stockTxt(i){
+  var eM=_esUnidadMedida(i.u);
+  return i.stock>0 ? 'Stock actual: '+i.stock+(eM?' '+i.u:' und')+((eM||!i.u||/^und/i.test(i.u))?'':' ('+i.u+')') : 'Sin stock';
+}
+function _tipoItemUnif(i){ return (i.pr && getProvTipo(i.pr)==='ruta') ? 'ruta' : 'directo'; }
+function _prioItemUnif(i){ return i.pr ? getProvPrioridad(i.pr) : 999; }
+
 function generarTextoUnificado(){
-  var items=itemsUnificados.filter(function(i){return i.p>0;});
-  // Generate text — proveedor en MAYÚSCULA sin emoji (negrita en WhatsApp con *)
+  if(!proveedoresCatalogo||!proveedoresCatalogo.length) cargarProveedoresCatalogo();
+  var conCant=itemsUnificados.filter(function(i){return i.p>0;});
+  // 1) Filtro Directo / Ruta
+  var items=conCant.filter(function(i){
+    return filtroExportUnif==='todo' || _tipoItemUnif(i)===filtroExportUnif;
+  });
+  // Orden base: en Ruta se respeta la prioridad del recorrido
+  function cmpRuta(a,b){ return _prioItemUnif(a)-_prioItemUnif(b) || (a.pr||'').localeCompare(b.pr||'') || a.n.localeCompare(b.n); }
+
   var f=new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'});
-  var t='★ NEW YORK BAR — PEDIDO UNIFICADO\n📅 '+f+'\n';
-  if(ordenUnif==='proveedor'){
-    var grp2={};items.forEach(function(i){var k=i.pr||'Sin proveedor';if(!grp2[k])grp2[k]=[];grp2[k].push(i);});
-    Object.keys(grp2).sort().forEach(function(pv){
-      t+='\n*'+pv.toUpperCase()+'*\n';
-      grp2[pv].forEach(function(i){
-          var uLow2=(i.u||'').toLowerCase();
-          var med2=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];
-          var esMed2=med2.some(function(m){return uLow2===m||uLow2.indexOf(m)===0;});
-          var cantStr2=esMed2?i.p+' '+i.u:i.p+' und';
-          var _uL=(i.u||'').toLowerCase();var _m=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];var _eM=_m.some(function(m){return _uL===m||_uL.indexOf(m)===0;});var stockTxt=i.stock>0?'Stock actual: '+i.stock+(_eM?' '+i.u:' und')+(_eM?'':' ('+i.u+')') :'Sin stock';
-          t+='  '+cantStr2+' '+i.n+'\n';
-        });
+  var sub={todo:'',directo:' — PROVEEDOR DIRECTO',ruta:' — COMPRA EN RUTA'}[filtroExportUnif];
+  var t='★ NEW YORK BAR — PEDIDO UNIFICADO'+sub+'\n📅 '+f+'\n';
+
+  if(!items.length){
+    t+='\n(Sin productos '+(filtroExportUnif==='ruta'?'de compra en ruta':filtroExportUnif==='directo'?'de proveedor directo':'')+' en este pedido)\n';
+  } else if(ordenUnif==='proveedor'){
+    // 2) Agrupar por proveedor: directos A-Z, luego ruta por prioridad
+    var grp={};items.forEach(function(i){var k=i.pr||'Sin proveedor';(grp[k]=grp[k]||[]).push(i);});
+    var keys=Object.keys(grp).sort(function(a,b){
+      var ta=a==='Sin proveedor'?'directo':getProvTipo(a), tb=b==='Sin proveedor'?'directo':getProvTipo(b);
+      if(ta!==tb) return ta==='ruta'?1:-1;
+      if(ta==='ruta') return getProvPrioridad(a)-getProvPrioridad(b) || a.localeCompare(b);
+      if(a==='Sin proveedor') return 1; if(b==='Sin proveedor') return -1;
+      return a.localeCompare(b);
+    });
+    var nRuta=0;
+    keys.forEach(function(pv){
+      var esRuta=pv!=='Sin proveedor'&&getProvTipo(pv)==='ruta';
+      var pref=esRuta?(++nRuta)+'. ':'';
+      t+='\n*'+pref+pv.toUpperCase()+'*\n';
+      grp[pv].forEach(function(i){ t+='  '+_cantTxt(i)+' '+i.n+'\n'; });
     });
   } else if(ordenUnif==='area'){
-    var grpA2={};items.forEach(function(i){var k=i.area||'otro';if(!grpA2[k])grpA2[k]=[];grpA2[k].push(i);});
-    Object.keys(grpA2).sort().forEach(function(area){
+    var grpA={};items.forEach(function(i){var k=i.area||'otro';(grpA[k]=grpA[k]||[]).push(i);});
+    Object.keys(grpA).sort().forEach(function(area){
       t+='\n*'+(AREA_LABELS[area]||area).toUpperCase()+'*\n';
-      grpA2[area].forEach(function(i){
-        var uLow=(i.u||'').toLowerCase();
-        var med=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];
-        var esMed=med.some(function(m){return uLow===m||uLow.indexOf(m)===0;});
-        var cantStr=esMed?i.p+' '+i.u:i.p+' und';
-        var _uL=(i.u||'').toLowerCase();var _m=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];var _eM=_m.some(function(m){return _uL===m||_uL.indexOf(m)===0;});var stockTxt=i.stock>0?'Stock actual: '+i.stock+(_eM?' '+i.u:' und')+(_eM?'':' ('+i.u+')') :'Sin stock';
+      var l=grpA[area]; if(filtroExportUnif==='ruta') l.sort(cmpRuta);
+      l.forEach(function(i){
         var provTxt=i.pr?' ['+i.pr+']':'';
-        t+='  '+cantStr+' '+i.n+provTxt+' '+stockTxt+'\n';
+        t+='  '+_cantTxt(i)+' '+i.n+provTxt+' '+_stockTxt(i)+'\n';
       });
     });
   } else {
-    var grp3={};items.forEach(function(i){var k=i.c||'Otros';if(!grp3[k])grp3[k]=[];grp3[k].push(i);});
-    Object.keys(grp3).sort().forEach(function(cat){
+    var grpC={};items.forEach(function(i){var k=i.c||'Otros';(grpC[k]=grpC[k]||[]).push(i);});
+    Object.keys(grpC).sort().forEach(function(cat){
       t+='\n*'+cat.toUpperCase()+'*\n';
-      grp3[cat].forEach(function(i){
-          var uLow2=(i.u||'').toLowerCase();
-          var med2=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];
-          var esMed2=med2.some(function(m){return uLow2===m||uLow2.indexOf(m)===0;});
-          var cantStr2=esMed2?i.p+' '+i.u:i.p+' und';
-          var _uL=(i.u||'').toLowerCase();var _m=['kg','lt','lts','gr','ml','cc','malla','caja','cajon','cajón','bidon','bidón','paquete','pack'];var _eM=_m.some(function(m){return _uL===m||_uL.indexOf(m)===0;});var stockTxt=i.stock>0?'Stock actual: '+i.stock+(_eM?' '+i.u:' und')+(_eM?'':' ('+i.u+')') :'Sin stock';
-          t+='  '+cantStr2+' '+i.n+'\n';
-        });
+      var l=grpC[cat]; if(filtroExportUnif==='ruta') l.sort(cmpRuta);
+      l.forEach(function(i){
+        var provTxt=(filtroExportUnif==='ruta'&&i.pr)?' ['+i.pr+']':'';
+        t+='  '+_cantTxt(i)+' '+i.n+provTxt+'\n';
+      });
     });
   }
   document.getElementById('unificadoTexto').value=t;
+
+  // Contadores en los botones de exportar
+  var nD=conCant.filter(function(i){return _tipoItemUnif(i)==='directo';}).length;
+  var nR=conCant.length-nD;
+  var cts={Todo:conCant.length,Directo:nD,Ruta:nR};
+  var lbls={Todo:'📋 Todo',Directo:'🏭 Directo',Ruta:'🚚 Ruta'};
+  ['Todo','Directo','Ruta'].forEach(function(k){
+    var el=document.getElementById('filtExport'+k);
+    if(el){ el.innerHTML=lbls[k]+' <span style="opacity:.7">('+cts[k]+')</span>'; el.classList.toggle('on',filtroExportUnif===k.toLowerCase()); }
+  });
 }
 
 async function confirmarPedidoUnificado(){
