@@ -1285,12 +1285,24 @@ async function cargarInventario(){
       seen[i.id]=true;
       return true;
     });
-    // Items personalizados (id > base max)
-    rows.forEach(function(r){
-      if(!base.find(function(b){return b.id===r.item_id;})){
-        data.push({id:r.item_id,n:r.nombre||'Insumo '+r.item_id,c:r.cat||'Otros',u:r.unidad||'Unid',s:r.stock,p:r.a_pedir,pr:r.proveedor,nt:r.notas,tc:r.tc,tb:r.tb,ts:r.ts});
-      }
+    // Normalizar nombres, categorías y proveedores; reparar en el servidor lo que venga "sucio"
+    var porReparar=[];
+    data.forEach(function(i){
+      var db=dbMap[i.id];
+      i.id=parseInt(i.id);
+      i.n=normTxt(i.n);
+      i.c=canonCat(i.c);
+      i.pr=canonProv(i.pr);
+      i.s=parseInt(i.s)||0; i.p=parseInt(i.p)||0;
+      if(db && (normTxt(db.nombre)!==db.nombre || (db.cat||'')!==i.c || (db.proveedor||'')!==i.pr)) porReparar.push(i);
     });
+    // Deduplicar por id (definitivo)
+    var vistos={};
+    data=data.filter(function(i){ if(!i.id||vistos[i.id]) return false; vistos[i.id]=true; return true; });
+    if(porReparar.length){
+      console.log('Reparando '+porReparar.length+' insumos con datos inconsistentes');
+      porReparar.forEach(function(i){ persistir(i); });
+    }
     renderChips();renderLista();
   }catch(e){
     var errMsg = e && e.message ? e.message : String(e);
@@ -1381,7 +1393,7 @@ function getStatus(item){
   if(s>=ts)return{l:'Sobreestock',co:'#60A5FA',cl:''};
   return{l:'Bien',co:'#22C55E',cl:''};
 }
-function catMeta(nombre){return cats.find(function(c){return c.nombre===nombre;})||{bg:'rgba(100,116,139,.2)',bo:'rgba(148,163,184,.5)',co:'#CBD5E1',emoji:''};}
+function catMeta(nombre){return cats.find(function(c){return claveTxt(c.nombre)===claveTxt(nombre);})||{bg:'rgba(100,116,139,.2)',bo:'rgba(148,163,184,.5)',co:'#CBD5E1',emoji:''};}
 
 // ============================================================
 // RENDER
@@ -1553,8 +1565,8 @@ var tblTimeout={};
 function renderTabla(){
   var q=(document.getElementById('searchInput').value||'').toLowerCase();
   var fil=data.filter(function(i){
-    if(catActiva!=='Todas'&&i.c!==catActiva)return false;
-    if(provActivo!=='Todos'&&(i.pr||'').trim()!==provActivo)return false;
+    if(catActiva!=='Todas'&&claveTxt(i.c)!==claveTxt(catActiva))return false;
+    if(provActivo!=='Todos'&&claveTxt(i.pr)!==claveTxt(provActivo))return false;
     if(q&&sinTildes(i.n).indexOf(sinTildes(q))===-1)return false;
     if(soloPedido&&i.p===0)return false;
     return true;
@@ -1624,6 +1636,10 @@ function tblGuardar(id,field,val){
   if(field==='s'||field==='p'||field==='ss'){
     var n=parseInt(val); if(isNaN(n)||n<0)return;
     item[field]=n;
+  } else if(field==='c'){
+    item.c=canonCat(val);
+  } else if(field==='pr'){
+    item.pr=canonProv(val);
   } else {
     item[field]=val;
   }
@@ -1708,7 +1724,8 @@ function agregarCategoria(){
   var nombre=document.getElementById('nuCatNombre').value.trim();
   var emoji=document.getElementById('nuCatEmoji').value.trim()||'🏷️';
   if(!nombre){showToast('Ingresa un nombre');return;}
-  if(cats.some(function(c){return c.nombre.toLowerCase()===nombre.toLowerCase();})){
+  nombre=normTxt(nombre);
+  if(cats.some(function(c){return claveTxt(c.nombre)===claveTxt(nombre);})){
     showToast('Ya existe esa categoría');return;
   }
   cats.push({nombre:nombre,emoji:emoji,bg:colorSelecCat.bg,bo:colorSelecCat.bo,co:colorSelecCat.co});
@@ -1734,7 +1751,7 @@ function editarCategoria(btn){
   
   // Cascade: update items that use old category name
   data.forEach(function(i){
-    if(i.c===nombreViejo){i.c=nuevo.trim();persistir(i);}
+    if(claveTxt(i.c)===claveTxt(nombreViejo)){i.c=normTxt(nuevo);persistir(i);}
   });
   
   guardarCatsCatalogo();
@@ -1747,7 +1764,7 @@ function editarCategoria(btn){
 function eliminarCategoria(btn){
   var idx=parseInt(btn.getAttribute('data-cat-idx'));
   var nombre=cats[idx].nombre;
-  var enUso=data.filter(function(i){return i.c===nombre;}).length;
+  var enUso=data.filter(function(i){return claveTxt(i.c)===claveTxt(nombre);}).length;
   var msg='¿Eliminar "'+nombre+'"?';
   if(enUso>0) msg+=' '+enUso+' insumo'+(enUso!==1?'s':'')+' quedará'+(enUso!==1?'n':'')+' sin categoría.';
   if(!confirm(msg))return;
@@ -1997,7 +2014,24 @@ function poblarSelectProveedor(selected){
 }
 
 
-function sinTildes(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function sinTildes(s){return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+// ── Normalización: evita categorías/proveedores "iguales pero distintos" (espacios, mayúsculas, tildes) ──
+function normTxt(s){ return String(s==null?'':s).replace(/\s+/g,' ').trim(); }
+function claveTxt(s){ return sinTildes(normTxt(s)); }
+function canonCat(s){
+  var n=normTxt(s); if(!n) return 'Otros';
+  var k=claveTxt(n);
+  var c=(cats||[]).find(function(x){return claveTxt(x.nombre)===k;});
+  if(c) return c.nombre;
+  var d=(data||[]).find(function(i){return i&&i.c&&claveTxt(i.c)===k;});
+  return d?d.c:n;
+}
+function canonProv(s){
+  var n=normTxt(s); if(!n) return '';
+  var k=claveTxt(n);
+  var p=(proveedoresCatalogo||[]).map(getProvNombre).find(function(x){return claveTxt(x)===k;});
+  return p||n;
+}
 function getProveedores(){
   var provs=proveedoresCatalogo.map(function(p){return typeof p==='string'?p:(p.nombre||'');}).filter(Boolean);
   data.forEach(function(i){
@@ -2011,7 +2045,8 @@ function renderChips(){
   // Así aparecen TODAS las categorías que tienen insumos, independiente del catálogo
   var catMap={};
   data.forEach(function(i){
-    if(!i.c) return;
+    if(!i.c) i.c='Otros';
+    i.c=canonCat(i.c);
     if(!catMap[i.c]){
       // Buscar emoji en cats si existe, si no usar 🏷️
       var catDef = cats.find(function(c){return c.nombre===i.c;});
@@ -2022,12 +2057,12 @@ function renderChips(){
   var h='<button class="chip'+(catActiva==='Todas'?' on':'')+'" onclick="setCat(\'Todas\')">TODAS</button>';
   catNames.forEach(function(nombre){
     var emoji = catMap[nombre];
-    h+='<button class="chip'+(catActiva===nombre?' on':'')+'" onclick="setCat(\''+nombre.replace(/'/g,"\\'")+'\')">';
+    h+='<button class="chip'+(claveTxt(catActiva)===claveTxt(nombre)?' on':'')+'" onclick="setCat(\''+nombre.replace(/'/g,"\\'")+'\')">';
     h+=emoji+' '+nombre.toUpperCase()+'</button>';
   });
   // Agregar al catálogo de cats las categorías que vienen de data y no están guardadas
   catNames.forEach(function(nombre){
-    if(!cats.find(function(c){return c.nombre===nombre;})){
+    if(!cats.find(function(c){return claveTxt(c.nombre)===claveTxt(nombre);})){
       cats.push({nombre:nombre,emoji:'🏷️',bg:'rgba(100,100,100,.2)',bo:'rgba(150,150,150,.4)',co:'#CBD5E1'});
       guardarCatsCatalogo();
     }
@@ -2052,8 +2087,8 @@ function renderChips(){
 function renderLista(){
   var q=(document.getElementById('searchInput').value||'').toLowerCase();
   var fil=data.filter(function(i){
-    if(catActiva!=='Todas'&&i.c!==catActiva)return false;
-    if(provActivo!=='Todos'&&(i.pr||'').trim()!==provActivo)return false;
+    if(catActiva!=='Todas'&&claveTxt(i.c)!==claveTxt(catActiva))return false;
+    if(provActivo!=='Todos'&&claveTxt(i.pr)!==claveTxt(provActivo))return false;
     if(q&&sinTildes(i.n).indexOf(sinTildes(q))===-1)return false;
     if(soloPedido&&i.p===0)return false;
     return true;
@@ -2181,7 +2216,7 @@ function setVista(v){
   if(v==='tabla'){ cargarProveedoresCatalogo(); renderTabla(); }
   else renderLista();
 }
-function setProv(p){provActivo=p;renderChips();renderLista();}
+function setProv(p){provActivo=p;renderChips();if(vistaActual==='tabla')renderTabla();else renderLista();}
 function toggleSolo(){soloPedido=!soloPedido;renderChips();renderLista();document.getElementById('btnSolo').classList.toggle('on',soloPedido);}
 
 // ============================================================
@@ -2301,10 +2336,10 @@ async function _guardarProductoInterno(){
   if(errores.length){showToast('⚠️ Obligatorios: '+errores.join(', '));return;}
   var eid=document.getElementById('eId').value;
   var obj={
-    n:nom,c:document.getElementById('eCat').value,u:document.getElementById('eUni').value||'Unid',col:document.getElementById('eColumna').value.trim(),
+    n:normTxt(nom),c:canonCat(document.getElementById('eCat').value),u:document.getElementById('eUni').value||'Unid',col:document.getElementById('eColumna').value.trim(),
     s:parseInt(document.getElementById('eSto').value)||0,
     p:parseInt(document.getElementById('ePed').value)||0,
-    pr:document.getElementById('ePro').value.trim(),
+    pr:canonProv(document.getElementById('ePro').value),
     nt:document.getElementById('eNot').value.trim(),
     ss:parseInt(document.getElementById('eSs').value)||0,
     cmin:parseInt((document.getElementById('eCmin')||{value:'0'}).value)||0,
@@ -2323,7 +2358,7 @@ async function _guardarProductoInterno(){
     // ID único: máximo actual + 1, mínimo 3000 para no colisionar con hardcode
     var nid=Math.max(maxId+1, 3000);
     obj.id=nid;obj.n=nom; // asegurar nombre siempre definido
-    var dup=data.find(function(i){return (i.n||'').trim().toLowerCase()===nom.toLowerCase();});
+    var dup=data.find(function(i){return claveTxt(i.n)===claveTxt(nom);});
     if(dup && !confirm('Ya existe "'+dup.n+'" en esta área ('+(dup.c||'sin categoría')+').\n\n¿Agregarlo de todas formas?')) return;
     data.push(obj);
     var nuPayload={area:areaActual.id,item_id:parseInt(nid),nombre:obj.n||'',stock:parseInt(obj.s)||0,a_pedir:parseInt(obj.p)||0,proveedor:obj.pr||'',notas:obj.nt||'',tc:parseInt(obj.tc)||3,tb:parseInt(obj.tb)||8,ts:parseInt(obj.ts)||25,ss:parseInt(obj.ss)||0,cat:obj.c||'',unidad:obj.u||'',compra_minima:parseInt(obj.cmin)||0,proveedor_alt:obj.palt||''};
