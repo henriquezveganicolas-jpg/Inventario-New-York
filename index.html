@@ -337,7 +337,7 @@ input::placeholder{color:#5a4a30}
       </div>
     </div>
     <div class="btnrow">
-      <button class="bprim" onclick="guardarProducto()">GUARDAR</button>
+      <button class="bprim" id="btnGuardarItem" onclick="guardarProducto()">GUARDAR</button>
       <button class="btn-secondary" onclick="cerrar('mItem')">Cancelar</button>
     </div>
   </div>
@@ -2271,7 +2271,24 @@ function abrirEditar(id){
   document.getElementById('eTs').value=item.ts||25;
   abrir('mItem');
 }
+var _guardandoItem=false;
 async function guardarProducto(){
+  if(_guardandoItem) return; // evita guardados dobles por toques repetidos
+  _guardandoItem=true;
+  var btn=document.getElementById('btnGuardarItem');
+  var txt=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='⏳ GUARDANDO…'; btn.style.opacity='.6'; }
+  try{
+    await _guardarProductoInterno();
+  }catch(e){
+    console.error(e);
+    showToast('❌ No se pudo guardar. Revisa la conexión e intenta de nuevo');
+  }finally{
+    _guardandoItem=false;
+    if(btn){ btn.disabled=false; btn.textContent=txt||'GUARDAR'; btn.style.opacity=''; }
+  }
+}
+async function _guardarProductoInterno(){
   var nom=document.getElementById('eNom').value.trim();
   var cat=document.getElementById('eCat').value;
   var uni=document.getElementById('eUni').value.trim();
@@ -2304,10 +2321,12 @@ async function guardarProducto(){
     // ID único: máximo actual + 1, mínimo 3000 para no colisionar con hardcode
     var nid=Math.max(maxId+1, 3000);
     obj.id=nid;obj.n=nom; // asegurar nombre siempre definido
+    var dup=data.find(function(i){return (i.n||'').trim().toLowerCase()===nom.toLowerCase();});
+    if(dup && !confirm('Ya existe "'+dup.n+'" en esta área ('+(dup.c||'sin categoría')+').\n\n¿Agregarlo de todas formas?')) return;
     data.push(obj);
     var nuPayload={area:areaActual.id,item_id:parseInt(nid),nombre:obj.n||'',stock:parseInt(obj.s)||0,a_pedir:parseInt(obj.p)||0,proveedor:obj.pr||'',notas:obj.nt||'',tc:parseInt(obj.tc)||3,tb:parseInt(obj.tb)||8,ts:parseInt(obj.ts)||25,ss:parseInt(obj.ss)||0,cat:obj.c||'',unidad:obj.u||'',compra_minima:parseInt(obj.cmin)||0,proveedor_alt:obj.palt||''};
     var nuR=await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'resolution=merge-duplicates,return=minimal','on-conflict':'area,item_id'}),body:JSON.stringify(nuPayload)});
-    if(!nuR.ok) throw new Error(await nuR.text());
+    if(!nuR.ok){ data=data.filter(function(i){return i!==obj;}); throw new Error(await nuR.text()); }
     cambiosSinGuardar=true;
     showToast('✅ Agregado');
   }
