@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8D%B8%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NY Bar">
 <title>NY Bar · Inventario</title>
@@ -45,7 +47,7 @@ input::placeholder{color:#5a4a30}
 .logout-btn{margin-top:28px;background:transparent;border:none;color:#6B5A3E;font-size:12px;cursor:pointer;text-decoration:underline}
 
 /* INVENTARIO HEADER */
-#invHeader{background:linear-gradient(180deg,#1A0C00,var(--dark));border-bottom:1px solid rgba(217,119,6,.35);padding:calc(env(safe-area-inset-top,0px)+48px) 0 12px;flex-shrink:0}.inv-inner{padding:0 12px}
+#invHeader{background:linear-gradient(180deg,#1A0C00,var(--dark));border-bottom:1px solid rgba(217,119,6,.35);padding:calc(env(safe-area-inset-top,0px) + 48px) 0 12px;flex-shrink:0}.inv-inner{padding:0 12px}
 .back-btn{background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:8px 0 10px;text-align:left;min-height:44px;display:flex;align-items:center}
 .inv-header-row{display:flex;justify-content:space-between;align-items:center}
 .inv-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold4);letter-spacing:.06em}
@@ -72,7 +74,7 @@ input::placeholder{color:#5a4a30}
 .chip.gon{border-color:rgba(74,222,128,.5);background:rgba(74,222,128,.12);color:#4ADE80}
 
 /* LIST */
-#invContent{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 calc(env(safe-area-inset-bottom,0px)+190px)}.inv-list-inner{padding:0 12px}
+#invContent{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 calc(env(safe-area-inset-bottom,0px) + 190px)}.inv-list-inner{padding:0 12px}
 .sec-head{padding:14px 0 6px;font-size:10px;font-weight:700;letter-spacing:.1em;display:flex;align-items:center;gap:6px}
 .sec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .card{margin:0 0 8px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;animation:cardIn .25s ease backwards;transition:border-color .2s}
@@ -104,7 +106,7 @@ input::placeholder{color:#5a4a30}
 .empty-icon{font-size:36px;margin-bottom:10px}
 
 /* BOTTOM BAR */
-#invBar{position:fixed;bottom:0;left:0;right:0;padding:10px 0 calc(env(safe-area-inset-bottom,0px)+16px);background:linear-gradient(0,var(--dark) 90%,transparent);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:10}.inv-bar-inner{width:100%;padding:0 12px;display:flex;flex-direction:column;gap:8px}
+#invBar{position:fixed;bottom:0;left:0;right:0;padding:10px 0 calc(env(safe-area-inset-bottom,0px) + 16px);background:linear-gradient(0,var(--dark) 90%,transparent);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:10}.inv-bar-inner{width:100%;padding:0 12px;display:flex;flex-direction:column;gap:8px}
 .save-snap-btn{background:transparent;border:1px solid rgba(217,119,6,.35);border-radius:9px;padding:9px;color:var(--gold4);font-weight:600;font-size:12px;cursor:pointer;letter-spacing:.03em}
 .bottom-row{display:flex;gap:8px}
 .bprim{flex:1;background:linear-gradient(135deg,var(--gold1),var(--gold2));border:none;border-radius:10px;padding:13px;color:var(--text);font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.04em}
@@ -114,7 +116,7 @@ input::placeholder{color:#5a4a30}
 /* OVERLAYS */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:overlayIn .2s ease}
 @keyframes overlayIn{from{opacity:0}to{opacity:1}}
-.sheet{position:relative;background:var(--dark2);border:1px solid rgba(217,119,6,.35);border-radius:24px 24px 0 0;padding:24px 22px calc(env(safe-area-inset-bottom,0px)+36px);width:100%;max-width:720px;max-height:94vh;overflow-y:auto;animation:sheetIn .28s cubic-bezier(.32,.72,0,1)}
+.sheet{position:relative;background:var(--dark2);border:1px solid rgba(217,119,6,.35);border-radius:24px 24px 0 0;padding:24px 22px calc(env(safe-area-inset-bottom,0px) + 36px);width:100%;max-width:720px;max-height:94vh;overflow-y:auto;animation:sheetIn .28s cubic-bezier(.32,.72,0,1)}
 @keyframes sheetIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle{width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 15px}.sheet-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.08);border:none;color:var(--muted);font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}.sheet-close:hover{background:rgba(255,255,255,.15);color:var(--text)}.sheet{position:relative}
 .sheet-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold4);letter-spacing:.06em;margin-bottom:6px}
@@ -150,7 +152,7 @@ input::placeholder{color:#5a4a30}
 .tab.on{border-color:var(--gold2);background:rgba(217,119,6,.2);color:var(--gold4)}
 
 /* TOAST */
-#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+95px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--dark3);border:1px solid rgba(217,119,6,.5);border-radius:10px;padding:10px 20px;color:var(--gold4);font-size:13px;font-weight:600;z-index:300;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 95px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--dark3);border:1px solid rgba(217,119,6,.5);border-radius:10px;padding:10px 20px;color:var(--gold4);font-size:13px;font-weight:600;z-index:300;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* LOADER */
@@ -3335,6 +3337,26 @@ window.addEventListener('beforeunload',function(e){
 // INIT
 // ============================================================
 document.getElementById('loginPass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// ── Espacio inferior automático: la lista siempre deja ver el último insumo ──
+(function(){
+  function ajustarEspacioInferior(){
+    var bar=document.getElementById('invBar'), cont=document.getElementById('invContent');
+    if(!bar||!cont) return;
+    var alto=bar.getBoundingClientRect().height||0;
+    cont.style.paddingBottom=(Math.ceil(alto)+24)+'px';
+  }
+  window.ajustarEspacioInferior=ajustarEspacioInferior;
+  function iniciar(){
+    var bar=document.getElementById('invBar');
+    if(bar && window.ResizeObserver) new ResizeObserver(ajustarEspacioInferior).observe(bar);
+    window.addEventListener('resize',ajustarEspacioInferior);
+    var cont=document.getElementById('invContent');
+    if(cont && window.MutationObserver) new MutationObserver(ajustarEspacioInferior).observe(cont,{childList:true});
+    ajustarEspacioInferior();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar); else iniciar();
+})();
 </script>
 </body>
 </html>
