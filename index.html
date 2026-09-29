@@ -183,6 +183,20 @@ input::placeholder{color:#5a4a30}
 .dd-item:hover,.dd-item:active{background:rgba(217,119,6,.15);color:var(--gold4)}
 .dd-item.sel{color:var(--gold4);background:rgba(217,119,6,.1);font-weight:600}
 
+.pc-sheet{padding:0 16px!important}
+.pc-head{position:sticky;top:0;z-index:5;background:var(--dark2);padding:14px 0 12px;margin:0 -2px;border-bottom:1px solid rgba(255,255,255,.06)}
+.pc-titlerow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.pc-x{flex-shrink:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--text);font-size:18px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pc-x:hover{background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5)}
+.pc-filtros{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.pc-chip{background:var(--dark3);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.pc-chip.on{background:rgba(217,119,6,.18);border-color:rgba(217,119,6,.6);color:var(--gold4)}
+.pc-chip .n{opacity:.7;margin-left:4px}
+.pc-foot{position:sticky;bottom:0;z-index:5;background:var(--dark2);padding:12px 0 calc(env(safe-area-inset-bottom,0px) + 16px);border-top:1px solid rgba(255,255,255,.06);margin-top:10px}
+.pc-pend{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;min-height:15px}
+.pc-pend.on{color:#FBBF24;font-weight:600}
+.pc-card.mod{border-color:rgba(251,191,36,.6)!important}
+#btnGuardarProv[disabled]{opacity:.45;cursor:default}
 </style>
 
 <script>
@@ -409,24 +423,29 @@ input::placeholder{color:#5a4a30}
 </div>
 
 <!-- OVERLAY: CATÁLOGO PROVEEDORES -->
-<div class="overlay" id="mProvCat" style="display:none;z-index:150" onclick="if(event.target===this)cerrar('mProvCat')">
-  <div class="sheet" onclick="event.stopPropagation()">
-    <div class="sheet-handle"></div>
-    <button class="sheet-close" onclick="cerrar('mProvCat')" title="Cerrar">✕</button>
-    <div class="sheet-title">🏪 CATÁLOGO DE PROVEEDORES</div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input class="finp" id="nuProvNombre" placeholder="Nombre del proveedor" style="flex:1;margin-bottom:0">
-      <button class="bprim" style="flex-shrink:0;padding:10px 14px;font-size:13px" onclick="agregarProveedor()">＋</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <select class="fsel" id="nuProvTipo" style="flex:1;margin-bottom:0">
-        <option value="directo">🏭 Proveedor Directo</option>
-        <option value="ruta">🚚 Compra en Ruta</option>
-      </select>
-      <input class="finp" id="nuProvPrioridad" type="number" min="1" placeholder="Prioridad" style="width:110px;margin-bottom:0">
+<div class="overlay" id="mProvCat" style="display:none;z-index:150" onclick="if(event.target===this)cerrarProvCat()">
+  <div class="sheet pc-sheet" onclick="event.stopPropagation()">
+    <div class="pc-head">
+      <div class="sheet-handle"></div>
+      <div class="pc-titlerow">
+        <div class="sheet-title" style="margin:0">🏪 CATÁLOGO DE PROVEEDORES</div>
+        <button class="pc-x" onclick="cerrarProvCat()" title="Cerrar">✕</button>
+      </div>
+      <div class="pc-filtros">
+        <button class="pc-chip on" data-f="todos" onclick="filtrarProvCat('todos')">📋 Todos</button>
+        <button class="pc-chip" data-f="directo" onclick="filtrarProvCat('directo')">🏭 Directo</button>
+        <button class="pc-chip" data-f="ruta" onclick="filtrarProvCat('ruta')">🚚 Ruta</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input class="finp" id="nuProvNombre" placeholder="🔍 Buscar o escribir nuevo proveedor" style="flex:1;margin-bottom:0" oninput="renderProvCatBody()" onkeydown="if(event.key==='Enter')agregarProveedor()">
+        <button class="bprim" style="flex-shrink:0;padding:10px 16px;font-size:13px" onclick="agregarProveedor()" title="Agregar proveedor">＋ Agregar</button>
+      </div>
     </div>
     <div id="provCatBody"></div>
-    <button class="btn-secondary" style="width:100%;margin-top:12px" onclick="cerrar('mProvCat')">CERRAR</button>
+    <div class="pc-foot">
+      <div id="provCatPend" class="pc-pend"></div>
+      <button class="bprim" id="btnGuardarProv" style="width:100%" onclick="guardarCambiosProv()">💾 GUARDAR CAMBIOS</button>
+    </div>
   </div>
 </div>
 
@@ -1742,143 +1761,193 @@ function eliminarCategoria(btn){
 // ============================================================
 // CATÁLOGO DE PROVEEDORES
 // ============================================================
+function _normProv(p){
+  if(!p) return null;
+  if(typeof p==='string'){ var s=p.trim(); return s?{nombre:s,tipo:'directo',prioridad:0}:null; }
+  var n=(p.nombre||'').toString().trim(); if(!n) return null;
+  return {nombre:n, tipo:(p.tipo==='ruta'?'ruta':'directo'), prioridad:parseInt(p.prioridad)||0};
+}
+function _ordenarProv(lista){
+  return lista.sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'});});
+}
 function cargarProveedoresCatalogo(){
-  var guardados = null;
-  try{ var r=localStorage.getItem('nybar_proveedores'); if(r) guardados=JSON.parse(r); }catch(e){}
-
-  // Collect all providers already in items data (all areas)
-  var fromItems = [];
-  var allItems = (ITEMS_BASE.servicio||[]).concat(ITEMS_BASE.cocina||[]).concat(ITEMS_BASE.barra||[]);
-  allItems.forEach(function(i){
-    if(i.pr && i.pr.trim() && fromItems.indexOf(i.pr.trim())===-1) fromItems.push(i.pr.trim());
-  });
-
-  // Always merge: defaults + items + saved
-  var merged = PROVEEDORES_DEFAULT.slice();
-  fromItems.forEach(function(p){
-    if(merged.indexOf(p)===-1) merged.push(p);
-  });
-  if(guardados && Array.isArray(guardados)){
-    guardados.forEach(function(p){
-      if(p && merged.indexOf(p)===-1) merged.push(p);
-    });
+  var guardados=null;
+  // Clave actual (nybar_proveedores2). Si no existe, migrar desde la clave vieja.
+  try{ var r=localStorage.getItem('nybar_proveedores2'); if(r) guardados=JSON.parse(r); }catch(e){}
+  if(!Array.isArray(guardados)){
+    try{ var r2=localStorage.getItem('nybar_proveedores'); if(r2) guardados=JSON.parse(r2); }catch(e){}
   }
-  proveedoresCatalogo = merged.sort();
+  var mapa={}; var lista=[];
+  function add(p){
+    var o=_normProv(p); if(!o) return;
+    var k=o.nombre.toLowerCase();
+    if(mapa[k]) return; // lo guardado manda: se agrega primero
+    mapa[k]=o; lista.push(o);
+  }
+  if(Array.isArray(guardados)) guardados.forEach(add);
+  var yaInicializado=Array.isArray(guardados);
+  // Proveedores presentes en insumos de todas las áreas (siempre se suman si faltan)
+  var allItems=(ITEMS_BASE.servicio||[]).concat(ITEMS_BASE.cocina||[]).concat(ITEMS_BASE.barra||[]);
+  if(typeof data!=='undefined' && Array.isArray(data)) allItems=allItems.concat(data);
+  allItems.forEach(function(i){ if(i&&i.pr) add(i.pr); });
+  // Por defecto: solo la primera vez (así un proveedor eliminado no vuelve a aparecer)
+  if(!yaInicializado) PROVEEDORES_DEFAULT.forEach(add);
+  proveedoresCatalogo=_ordenarProv(lista);
   guardarProveedoresCatalogo();
 }
 function guardarProveedoresCatalogo(){
   try{ localStorage.setItem('nybar_proveedores2', JSON.stringify(proveedoresCatalogo)); }catch(e){}
 }
 
-function getProvNombre(p){ return typeof p==='string'?p:(p.nombre||''); }
-function getProvTipo(nombre){ 
-  var p=proveedoresCatalogo.find(function(x){return (x.nombre||x)===nombre;});
+function getProvNombre(p){ return typeof p==='string'?p:(p&&p.nombre||''); }
+function getProvTipo(nombre){
+  var p=proveedoresCatalogo.find(function(x){return getProvNombre(x)===nombre;});
   return p&&p.tipo?p.tipo:'directo';
 }
 function getProvPrioridad(nombre){
-  var p=proveedoresCatalogo.find(function(x){return (x.nombre||x)===nombre;});
+  var p=proveedoresCatalogo.find(function(x){return getProvNombre(x)===nombre;});
   return p&&p.prioridad?p.prioridad:999;
 }
 
+// ---- Edición con borrador: nada se guarda hasta "Guardar cambios" ----
+var provDraft=[]; var provFiltro='todos'; var provOriginalJSON='';
 
-function abrirProvCat(){
-  cargarProveedoresCatalogo(); // siempre recargar antes de mostrar
-  renderProvCatBody();
-  document.getElementById('nuProvNombre').value='';
-  document.getElementById('mProvCat').style.display='flex';
+function _provHayCambios(){ return JSON.stringify(provDraft)!==provOriginalJSON; }
+function _provEsModificado(p){
+  var orig=null;
+  try{ orig=JSON.parse(provOriginalJSON).find(function(x){return x.nombre===p.nombre;}); }catch(e){}
+  if(!orig) return true;
+  return orig.tipo!==p.tipo || (orig.prioridad||0)!==(p.prioridad||0);
 }
 
-function renderProvCatBody(){
-  var h='';
-  if(!proveedoresCatalogo.length){
-    h='<div class="loader">Sin proveedores. Agrega el primero.</div>';
-  } else {
-    var directos=proveedoresCatalogo.filter(function(p){return typeof p==='string'||p.tipo!=='ruta';});
-    var ruta=proveedoresCatalogo.filter(function(p){return typeof p!=='string'&&p.tipo==='ruta';}).sort(function(a,b){return (a.prioridad||0)-(b.prioridad||0);});
+function abrirProvCat(){
+  cargarProveedoresCatalogo();
+  provDraft=JSON.parse(JSON.stringify(proveedoresCatalogo));
+  provOriginalJSON=JSON.stringify(provDraft);
+  provFiltro='todos';
+  document.getElementById('nuProvNombre').value='';
+  renderProvCatBody();
+  document.getElementById('mProvCat').style.display='flex';
+  var sh=document.querySelector('#mProvCat .sheet'); if(sh) sh.scrollTop=0;
+}
 
-    function renderGrupo(lista, titulo){
-      if(!lista.length) return '';
-      var gh='<div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--gold4);margin:12px 0 6px">'+titulo+'</div>';
-      lista.forEach(function(p){
-        var idx=proveedoresCatalogo.indexOf(p);
-        var pNom=typeof p==='string'?p:(p.nombre||'');
-        var pTipo=typeof p==='string'?'directo':(p.tipo||'directo');
-        var pPri=typeof p==='string'?0:(p.prioridad||0);
-        gh+='<div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px">';
-        gh+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
-        gh+='<div style="flex:1;font-size:14px;font-weight:600;color:var(--text)">'+pNom+'</div>';
-        gh+='<button class="abtn d" data-prov-idx="'+idx+'" onclick="eliminarProveedor(this)">🗑️</button>';
-        gh+='</div>';
-        gh+='<div style="display:flex;gap:8px;align-items:center">';
-        gh+='<select data-prov-idx="'+idx+'" onchange="cambiarTipoProv(this)" style="flex:1;background:var(--dark2);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--gold4);font-size:12px;padding:5px 8px;outline:none">';
-        gh+='<option value="directo"'+(pTipo==='directo'?' selected':'')+'>🏭 Proveedor Directo</option>';
-        gh+='<option value="ruta"'+(pTipo==='ruta'?' selected':'')+'>🚚 Compra en Ruta</option>';
-        gh+='</select>';
-        gh+='<input type="number" min="1" placeholder="Prioridad" data-prov-idx="'+idx+'" value="'+(pPri||'')+'" onchange="cambiarPrioridadProv(this)" style="width:100px;background:var(--dark2);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--text);font-size:12px;padding:5px 8px;outline:none'+(pTipo!=='ruta'?';opacity:0.3;pointer-events:none':'')+'">';
-        gh+='</div></div>';
-      });
-      return gh;
+function cerrarProvCat(){
+  if(_provHayCambios()){
+    if(confirm('Tienes cambios sin guardar.\n\nAceptar = Guardar y cerrar\nCancelar = Descartar cambios')){
+      guardarCambiosProv(true);
     }
-    h+=renderGrupo(directos,'🏭 PROVEEDOR DIRECTO');
-    h+=renderGrupo(ruta,'🚚 COMPRA EN RUTA');
+  }
+  cerrar('mProvCat');
+}
+
+function filtrarProvCat(f){
+  provFiltro=f;
+  renderProvCatBody();
+}
+
+function _escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderProvCatBody(){
+  // Chips con contadores
+  var nDir=provDraft.filter(function(p){return p.tipo!=='ruta';}).length;
+  var nRut=provDraft.length-nDir;
+  var cnt={todos:provDraft.length,directo:nDir,ruta:nRut};
+  var lbl={todos:'📋 Todos',directo:'🏭 Directo',ruta:'🚚 Ruta'};
+  document.querySelectorAll('#mProvCat .pc-chip').forEach(function(b){
+    var f=b.getAttribute('data-f');
+    b.classList.toggle('on',f===provFiltro);
+    b.innerHTML=lbl[f]+'<span class="n">('+cnt[f]+')</span>';
+  });
+
+  var q=(document.getElementById('nuProvNombre').value||'').trim().toLowerCase();
+  function pasa(p){ return !q || p.nombre.toLowerCase().indexOf(q)!==-1; }
+  var directos=provDraft.filter(function(p){return p.tipo!=='ruta'&&pasa(p);});
+  var ruta=provDraft.filter(function(p){return p.tipo==='ruta'&&pasa(p);})
+    .sort(function(a,b){return (a.prioridad||999)-(b.prioridad||999)||a.nombre.localeCompare(b.nombre);});
+
+  function renderGrupo(lista,titulo){
+    if(!lista.length) return '';
+    var gh='<div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--gold4);margin:14px 0 6px">'+titulo+' <span style="color:var(--muted)">('+lista.length+')</span></div>';
+    lista.forEach(function(p){
+      var idx=provDraft.indexOf(p);
+      var mod=_provEsModificado(p);
+      gh+='<div class="pc-card'+(mod?' mod':'')+'" style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px">';
+      gh+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      gh+='<div style="flex:1;font-size:14px;font-weight:600;color:var(--text)">'+_escHtml(p.nombre)+(mod?' <span style="font-size:10px;color:#FBBF24;font-weight:700">● sin guardar</span>':'')+'</div>';
+      gh+='<button class="abtn d" data-prov-idx="'+idx+'" onclick="eliminarProveedor(this)">🗑️</button>';
+      gh+='</div>';
+      gh+='<div style="display:flex;gap:8px;align-items:center">';
+      gh+='<select data-prov-idx="'+idx+'" onchange="cambiarTipoProv(this)" style="flex:1;background:var(--dark2);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--gold4);font-size:12px;padding:7px 8px;outline:none">';
+      gh+='<option value="directo"'+(p.tipo!=='ruta'?' selected':'')+'>🏭 Proveedor Directo</option>';
+      gh+='<option value="ruta"'+(p.tipo==='ruta'?' selected':'')+'>🚚 Compra en Ruta</option>';
+      gh+='</select>';
+      if(p.tipo==='ruta'){
+        gh+='<input type="number" min="1" placeholder="Prioridad" data-prov-idx="'+idx+'" value="'+(p.prioridad||'')+'" oninput="cambiarPrioridadProv(this)" onchange="renderProvCatBody()" style="width:100px;background:var(--dark2);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;outline:none">';
+      }
+      gh+='</div></div>';
+    });
+    return gh;
+  }
+  var h='';
+  if(provFiltro!=='ruta') h+=renderGrupo(directos,'🏭 PROVEEDOR DIRECTO');
+  if(provFiltro!=='directo') h+=renderGrupo(ruta,'🚚 COMPRA EN RUTA');
+  if(!h){
+    h='<div class="loader">'+(q?'No hay proveedores con "'+_escHtml(q)+'". Toca ＋ Agregar para crearlo.':'Sin proveedores en este filtro.')+'</div>';
   }
   document.getElementById('provCatBody').innerHTML=h;
+  _actualizarBarraGuardarProv();
+}
+
+function _actualizarBarraGuardarProv(){
+  var hay=_provHayCambios();
+  var pend=document.getElementById('provCatPend');
+  var btn=document.getElementById('btnGuardarProv');
+  if(pend){ pend.textContent=hay?'⚠️ Tienes cambios sin guardar':'Sin cambios pendientes'; pend.classList.toggle('on',hay); }
+  if(btn) btn.disabled=!hay;
 }
 
 function cambiarTipoProv(sel){
-  var idx=parseInt(sel.getAttribute('data-prov-idx'));
-  var p=proveedoresCatalogo[idx];
-  if(typeof p==='string') p={nombre:p,tipo:'directo',prioridad:0};
-  p.tipo=sel.value;
-  proveedoresCatalogo[idx]=p;
-  guardarProveedoresCatalogo();
+  var p=provDraft[parseInt(sel.getAttribute('data-prov-idx'))]; if(!p) return;
+  p.tipo=sel.value==='ruta'?'ruta':'directo';
+  if(p.tipo==='directo') p.prioridad=0;
   renderProvCatBody();
 }
 
 function cambiarPrioridadProv(inp){
-  var idx=parseInt(inp.getAttribute('data-prov-idx'));
-  var p=proveedoresCatalogo[idx];
-  if(typeof p==='string') p={nombre:p,tipo:'ruta',prioridad:0};
+  var p=provDraft[parseInt(inp.getAttribute('data-prov-idx'))]; if(!p) return;
   p.prioridad=parseInt(inp.value)||0;
-  proveedoresCatalogo[idx]=p;
-  guardarProveedoresCatalogo();
+  _actualizarBarraGuardarProv();
 }
 
 function agregarProveedor(){
-  var nombre=document.getElementById('nuProvNombre').value.trim();
-  if(!nombre){showToast('Ingresa un nombre');return;}
-  if(proveedoresCatalogo.some(function(p){return p.toLowerCase()===nombre.toLowerCase();})){
+  var inp=document.getElementById('nuProvNombre');
+  var nombre=inp.value.trim();
+  if(!nombre){showToast('Escribe el nombre del proveedor');inp.focus();return;}
+  if(provDraft.some(function(p){return p.nombre.toLowerCase()===nombre.toLowerCase();})){
     showToast('Ya existe ese proveedor');return;
   }
-  proveedoresCatalogo.push(nombre);
-  proveedoresCatalogo.sort();
-  guardarProveedoresCatalogo();
-  document.getElementById('nuProvNombre').value='';
+  var tipo=provFiltro==='ruta'?'ruta':'directo';
+  provDraft.push({nombre:nombre,tipo:tipo,prioridad:0});
+  _ordenarProv(provDraft);
+  inp.value='';
   renderProvCatBody();
-  showToast('✅ Proveedor agregado');
-}
-
-function editarProveedor(btn){
-  var idx=parseInt(btn.getAttribute('data-prov-idx'));
-  var p=proveedoresCatalogo[idx];
-  var nombre=prompt('Nuevo nombre:',typeof p==='string'?p:(p.nombre||''));
-  if(!nombre||!nombre.trim())return;
-  if(typeof p==='string') proveedoresCatalogo[idx]={nombre:nombre.trim(),tipo:'directo',prioridad:0};
-  else proveedoresCatalogo[idx].nombre=nombre.trim();
-  proveedoresCatalogo.sort(function(a,b){return (a.nombre||a).localeCompare(b.nombre||b);});
-  guardarProveedoresCatalogo();
-  renderProvCatBody();
-  showToast('✅ Nombre actualizado');
+  showToast('➕ Agregado — recuerda Guardar cambios');
 }
 
 function eliminarProveedor(btn){
   var idx=parseInt(btn.getAttribute('data-prov-idx'));
-  var nombre=proveedoresCatalogo[idx];
-  if(!confirm('¿Eliminar "'+nombre+'" del catálogo?'))return;
-  proveedoresCatalogo.splice(idx,1);
-  guardarProveedoresCatalogo();
+  var p=provDraft[idx]; if(!p) return;
+  if(!confirm('¿Eliminar "'+p.nombre+'" del catálogo?'))return;
+  provDraft.splice(idx,1);
   renderProvCatBody();
-  showToast('🗑️ Eliminado');
+}
+
+function guardarCambiosProv(silencioso){
+  proveedoresCatalogo=_ordenarProv(JSON.parse(JSON.stringify(provDraft)));
+  guardarProveedoresCatalogo();
+  provOriginalJSON=JSON.stringify(provDraft);
+  renderProvCatBody();
+  showToast('💾 Cambios guardados');
 }
 
 function poblarSelectCategoria(selected){
@@ -2799,7 +2868,7 @@ function renderVistaUnif(){
     // Proveedor selector
     // Asegurar que el proveedor actual aparece aunque no esté en el catálogo
     var provActual=i.pr||'';
-    var catConActual=proveedoresCatalogo.slice();
+    var catConActual=proveedoresCatalogo.map(getProvNombre).filter(Boolean);
     if(provActual&&!catConActual.includes(provActual)) catConActual.unshift(provActual);
     var provOpts='<option value="">Sin proveedor</option>';
     catConActual.forEach(function(p){provOpts+='<option value="'+p+'"'+(p===provActual?' selected':'')+'>'+p+'</option>';});
