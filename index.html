@@ -2308,6 +2308,15 @@ function abrirEditar(id){
   document.getElementById('eTs').value=item.ts||25;
   abrir('mItem');
 }
+async function obtenerNuevoItemId(){
+  var local=data.length?Math.max.apply(null,data.map(function(i){return parseInt(i.id)||0;})):0;
+  var remoto=0;
+  try{
+    var rows=await sbGet('inventario','select=item_id&order=item_id.desc&limit=1');
+    if(rows&&rows[0]) remoto=parseInt(rows[0].item_id)||0;
+  }catch(e){ console.warn('No se pudo leer el máximo item_id',e); }
+  return Math.max(local+1, remoto+1, 3000);
+}
 var _guardandoItem=false;
 async function guardarProducto(){
   if(_guardandoItem) return; // evita guardados dobles por toques repetidos
@@ -2318,8 +2327,10 @@ async function guardarProducto(){
   try{
     await _guardarProductoInterno();
   }catch(e){
-    console.error(e);
-    showToast('❌ No se pudo guardar. Revisa la conexión e intenta de nuevo');
+    console.error('Error al guardar insumo:', e);
+    var msg=(e&&e.message)||String(e);
+    if(/Failed to fetch|NetworkError|network/i.test(msg)) showToast('❌ Sin conexión con el servidor. Intenta de nuevo');
+    else { showToast('❌ El servidor rechazó el insumo (ver detalle)'); alert('No se pudo guardar el insumo.\n\nDetalle del servidor:\n'+msg.slice(0,400)+'\n\nMándame una foto de este mensaje si se repite.'); }
   }finally{
     _guardandoItem=false;
     if(btn){ btn.disabled=false; btn.textContent=txt||'GUARDAR'; btn.style.opacity=''; }
@@ -2354,16 +2365,29 @@ async function _guardarProductoInterno(){
     cambiosSinGuardar=true;
     showToast('✅ Actualizado');
   } else {
-    var maxId=data.length?Math.max.apply(null,data.map(function(i){return i.id;})):0;
-    // ID único: máximo actual + 1, mínimo 3000 para no colisionar con hardcode
-    var nid=Math.max(maxId+1, 3000);
-    obj.id=nid;obj.n=nom; // asegurar nombre siempre definido
+    obj.n=normTxt(nom); // asegurar nombre siempre definido
     var dup=data.find(function(i){return claveTxt(i.n)===claveTxt(nom);});
     if(dup && !confirm('Ya existe "'+dup.n+'" en esta área ('+(dup.c||'sin categoría')+').\n\n¿Agregarlo de todas formas?')) return;
+    // ID único: se consulta el máximo en el SERVIDOR (todas las áreas, incluidos registros ocultos)
+    var nid=await obtenerNuevoItemId();
+    var intentos=0, ultimoError='';
+    while(intentos<6){
+      var nuPayload={area:areaActual.id,item_id:nid,nombre:obj.n,stock:parseInt(obj.s)||0,a_pedir:parseInt(obj.p)||0,proveedor:obj.pr||'',notas:obj.nt||'',tc:parseInt(obj.tc)||3,tb:parseInt(obj.tb)||8,ts:parseInt(obj.ts)||25,ss:parseInt(obj.ss)||0,cat:obj.c||'',unidad:obj.u||'',compra_minima:parseInt(obj.cmin)||0,proveedor_alt:obj.palt||'',columna:obj.col||''};
+      var nuR=await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(nuPayload)});
+      if(nuR.ok){ ultimoError=''; break; }
+      ultimoError=await nuR.text();
+      console.error('Insert inventario falló (id '+nid+'):', nuR.status, ultimoError);
+      // 409 / duplicate key → ese ID ya está ocupado: probar el siguiente
+      if(nuR.status===409 || /duplicate key|23505/i.test(ultimoError)){ nid++; intentos++; continue; }
+      // Columna inexistente (ej. "columna") → reintentar sin ella
+      if(/columna/i.test(ultimoError) && /column|PGRST204/i.test(ultimoError)){ delete nuPayload.columna; 
+        var r2=await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(nuPayload)});
+        if(r2.ok){ ultimoError=''; break; } ultimoError=await r2.text(); }
+      break;
+    }
+    if(ultimoError){ throw new Error(ultimoError); }
+    obj.id=nid;
     data.push(obj);
-    var nuPayload={area:areaActual.id,item_id:parseInt(nid),nombre:obj.n||'',stock:parseInt(obj.s)||0,a_pedir:parseInt(obj.p)||0,proveedor:obj.pr||'',notas:obj.nt||'',tc:parseInt(obj.tc)||3,tb:parseInt(obj.tb)||8,ts:parseInt(obj.ts)||25,ss:parseInt(obj.ss)||0,cat:obj.c||'',unidad:obj.u||'',compra_minima:parseInt(obj.cmin)||0,proveedor_alt:obj.palt||''};
-    var nuR=await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'resolution=merge-duplicates,return=minimal','on-conflict':'area,item_id'}),body:JSON.stringify(nuPayload)});
-    if(!nuR.ok){ data=data.filter(function(i){return i!==obj;}); throw new Error(await nuR.text()); }
     cambiosSinGuardar=true;
     showToast('✅ Agregado');
   }
