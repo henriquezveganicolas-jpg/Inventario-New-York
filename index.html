@@ -1793,24 +1793,29 @@ function renderProvCatBody(){
   if(!proveedoresCatalogo.length){
     h='<div class="loader">Sin proveedores. Agrega el primero.</div>';
   } else {
-    // Separar por tipo
     var directos=proveedoresCatalogo.filter(function(p){return typeof p==='string'||p.tipo!=='ruta';});
     var ruta=proveedoresCatalogo.filter(function(p){return typeof p!=='string'&&p.tipo==='ruta';}).sort(function(a,b){return (a.prioridad||0)-(b.prioridad||0);});
-    
+
     function renderGrupo(lista, titulo){
       if(!lista.length) return '';
       var gh='<div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--gold4);margin:12px 0 6px">'+titulo+'</div>';
-      lista.forEach(function(p,i){
+      lista.forEach(function(p){
         var idx=proveedoresCatalogo.indexOf(p);
-        var pNom=typeof p==='string'?p:(p.nombre||p);
+        var pNom=typeof p==='string'?p:(p.nombre||'');
         var pTipo=typeof p==='string'?'directo':(p.tipo||'directo');
         var pPri=typeof p==='string'?0:(p.prioridad||0);
-        gh+='<div style="display:flex;align-items:center;gap:8px;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px">';
-        if(pTipo==='ruta') gh+='<span style="font-size:11px;color:var(--muted);min-width:20px;text-align:center;font-weight:700">#'+(pPri||'—')+'</span>';
+        gh+='<div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:6px">';
+        gh+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
         gh+='<div style="flex:1;font-size:14px;font-weight:600;color:var(--text)">'+pNom+'</div>';
-        gh+='<button class="abtn" data-prov-idx="'+idx+'" onclick="editarProveedor(this)">✏️</button>';
         gh+='<button class="abtn d" data-prov-idx="'+idx+'" onclick="eliminarProveedor(this)">🗑️</button>';
         gh+='</div>';
+        gh+='<div style="display:flex;gap:8px;align-items:center">';
+        gh+='<select data-prov-idx="'+idx+'" onchange="cambiarTipoProv(this)" style="flex:1;background:var(--dark2);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--gold4);font-size:12px;padding:5px 8px;outline:none">';
+        gh+='<option value="directo"'+(pTipo==='directo'?' selected':'')+'>🏭 Proveedor Directo</option>';
+        gh+='<option value="ruta"'+(pTipo==='ruta'?' selected':'')+'>🚚 Compra en Ruta</option>';
+        gh+='</select>';
+        gh+='<input type="number" min="1" placeholder="Prioridad" data-prov-idx="'+idx+'" value="'+(pPri||'')+'" onchange="cambiarPrioridadProv(this)" style="width:100px;background:var(--dark2);border:1px solid rgba(217,119,6,.3);border-radius:6px;color:var(--text);font-size:12px;padding:5px 8px;outline:none'+(pTipo!=='ruta'?';opacity:0.3;pointer-events:none':'')+'">';
+        gh+='</div></div>';
       });
       return gh;
     }
@@ -1818,6 +1823,25 @@ function renderProvCatBody(){
     h+=renderGrupo(ruta,'🚚 COMPRA EN RUTA');
   }
   document.getElementById('provCatBody').innerHTML=h;
+}
+
+function cambiarTipoProv(sel){
+  var idx=parseInt(sel.getAttribute('data-prov-idx'));
+  var p=proveedoresCatalogo[idx];
+  if(typeof p==='string') p={nombre:p,tipo:'directo',prioridad:0};
+  p.tipo=sel.value;
+  proveedoresCatalogo[idx]=p;
+  guardarProveedoresCatalogo();
+  renderProvCatBody();
+}
+
+function cambiarPrioridadProv(inp){
+  var idx=parseInt(inp.getAttribute('data-prov-idx'));
+  var p=proveedoresCatalogo[idx];
+  if(typeof p==='string') p={nombre:p,tipo:'ruta',prioridad:0};
+  p.prioridad=parseInt(inp.value)||0;
+  proveedoresCatalogo[idx]=p;
+  guardarProveedoresCatalogo();
 }
 
 function agregarProveedor(){
@@ -1837,18 +1861,14 @@ function agregarProveedor(){
 function editarProveedor(btn){
   var idx=parseInt(btn.getAttribute('data-prov-idx'));
   var p=proveedoresCatalogo[idx];
-  var nombre=prompt('Nombre:',p.nombre||p);
+  var nombre=prompt('Nuevo nombre:',typeof p==='string'?p:(p.nombre||''));
   if(!nombre||!nombre.trim())return;
-  var tipo=prompt('Tipo (directo/ruta):',p.tipo||'directo');
-  if(!tipo)return;
-  var prioridad=0;
-  if(tipo==='ruta') prioridad=parseInt(prompt('Prioridad (número):',p.prioridad||0))||0;
-  proveedoresCatalogo[idx]={nombre:nombre.trim(),tipo:tipo.trim(),prioridad:prioridad};
-  proveedoresCatalogo.sort(function(a,b){return a.nombre.localeCompare(b.nombre);});
+  if(typeof p==='string') proveedoresCatalogo[idx]={nombre:nombre.trim(),tipo:'directo',prioridad:0};
+  else proveedoresCatalogo[idx].nombre=nombre.trim();
+  proveedoresCatalogo.sort(function(a,b){return (a.nombre||a).localeCompare(b.nombre||b);});
   guardarProveedoresCatalogo();
   renderProvCatBody();
-  poblarSelectProveedor(document.getElementById('ePro').value);
-  showToast('✅ Proveedor actualizado');
+  showToast('✅ Nombre actualizado');
 }
 
 function eliminarProveedor(btn){
