@@ -2576,8 +2576,8 @@ function renderPedidoBody(){
     Object.keys(grpP).sort().forEach(function(pv){
       h+='<div style="margin-bottom:18px"><div class="ped-prov" style="color:#FCD34D;background:rgba(217,119,6,.12)">🏪 '+pv.toUpperCase()+'</div>';
       grpP[pv].forEach(function(i){
-        var nombre=i.u&&i.u!=='Unid'&&i.u!=='unid'?i.n+' '+i.u:i.n;
-        var _stockSpan=i.s>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'&&i.u!=='unid'?' ('+i.u+')':'')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
+        var nombre=i.u&&!/^(unid|und|unidad|unidades)$/i.test(i.u)?i.n+' '+i.u:i.n;
+        var _stockSpan=i.s>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px;white-space:nowrap">Stock actual: '+(_esUnidadMedida(i.u)?i.s+' '+i.u:i.s+' und')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
         var _cminW='';
         if(i.cmin>0&&i.p>0&&i.p<i.cmin){
           var _altProv=i.palt||'Botillería Las Copas';
@@ -2588,19 +2588,19 @@ function renderPedidoBody(){
           var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_provDestino.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">'+_btnLabel+'</button>';
           _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con CCU → '+_altProv+_btnCambiar+'</div>';
         }
-        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
+        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_stockSpan+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
       });
       h+='</div>';
     });
   } else {
     var grpC={};con.forEach(function(i){var k=i.c||'Otros';if(!grpC[k])grpC[k]=[];grpC[k].push(i);});
-    cats.forEach(function(catObj){
+    _ordenCatsTexto(grpC).forEach(function(catObj){
       if(!grpC[catObj.nombre])return;
       var cm=catMeta(catObj.nombre);
-      h+='<div style="margin-bottom:18px"><div class="ped-prov" style="color:'+cm.co+';background:'+cm.bg+'">'+catObj.emoji+' '+catObj.nombre.toUpperCase()+'</div>';
+      h+='<div style="margin-bottom:18px"><div class="ped-prov" style="color:'+cm.co+';background:'+cm.bg+'">'+(catObj.emoji||cm.emoji||'🏷️')+' '+catObj.nombre.toUpperCase()+'</div>';
       grpC[catObj.nombre].forEach(function(i){
-        var nombre=i.u&&i.u!=='Unid'&&i.u!=='unid'?i.n+' '+i.u:i.n;
-        var _stockSpan=i.s>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px">Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'&&i.u!=='unid'?' ('+i.u+')':'')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
+        var nombre=i.u&&!/^(unid|und|unidad|unidades)$/i.test(i.u)?i.n+' '+i.u:i.n;
+        var _stockSpan=i.s>0?'<span style="font-size:11px;color:#4ADE80;margin-left:6px;white-space:nowrap">Stock actual: '+(_esUnidadMedida(i.u)?i.s+' '+i.u:i.s+' und')+'</span>':'<span style="font-size:11px;color:#EF4444;margin-left:6px">Sin stock</span>';
         var _cminW='';
         if(i.cmin>0&&i.p>0&&i.p<i.cmin){
           var _altProv=i.palt||'Botillería Las Copas';
@@ -2611,7 +2611,7 @@ function renderPedidoBody(){
           var _btnCambiar='<button onclick="cambiarProvPedido('+i.id+',\''+_provDestino.replace(/'/g,"\\'")+'\')" style="margin-left:8px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:6px;padding:2px 8px;font-size:10px;color:#FBBF24;cursor:pointer">'+_btnLabel+'</button>';
           _cminW='<div style="font-size:11px;color:#FBBF24;margin-top:3px">⚠️ Mínimo '+i.cmin+' und con CCU → '+_altProv+_btnCambiar+'</div>';
         }
-        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
+        h+='<div class="ped-row"><div style="font-size:15px;color:var(--text);line-height:1.4;font-weight:500">'+nombre+_stockSpan+_cminW+'</div><div class="ped-qty">'+i.p+' und</div></div>';
       });
       h+='</div>';
     });
