@@ -1109,6 +1109,7 @@ var areaActual = null;
 var data = [];
 var cats = [];
 var catActiva = 'Todas';
+var MARCA_ELIMINADO='__ELIMINADO__';
 var vistaActual = 'tabla';
 var cambiosSinGuardar = false;
 var proveedoresCatalogo = [];
@@ -1136,6 +1137,45 @@ function cerrar(id){
 }
 function abrir(id){document.getElementById(id).style.display='flex';}
 
+
+// ============================================================
+// SEMBRAR INSUMOS BASE EN SUPABASE
+// Los insumos originales viven en el código; si nunca se editaron no existían
+// en el servidor, y por eso Google Sheets no los mostraba. Aquí se crean los faltantes.
+// ============================================================
+async function sembrarArea(areaId){
+  var base=ITEMS_BASE[areaId]||[];
+  if(!base.length) return 0;
+  var rows=await sbGet('inventario','area=eq.'+areaId+'&select=item_id&limit=5000');
+  var existentes={}; rows.forEach(function(r){existentes[r.item_id]=true;});
+  var faltan=base.filter(function(i){return !existentes[i.id];}).map(function(i){
+    return {area:areaId,item_id:i.id,nombre:normTxt(i.n),cat:normTxt(i.c)||'Otros',unidad:i.u||'',
+      stock:parseInt(i.s)||0,a_pedir:parseInt(i.p)||0,proveedor:normTxt(i.pr),notas:i.nt||'',
+      tc:parseInt(i.tc)||3,tb:parseInt(i.tb)||8,ts:parseInt(i.ts)||25,ss:0,
+      compra_minima:parseInt(i.cmin)||0,proveedor_alt:i.palt||''};
+  });
+  if(!faltan.length) return 0;
+  var r=await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(faltan)});
+  if(r.ok) return faltan.length;
+  // Si el lote falla, uno por uno (ignora los que ya existan)
+  var ok=0;
+  for(var k=0;k<faltan.length;k++){
+    try{ var r1=await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(faltan[k])}); if(r1.ok) ok++; }catch(e){}
+  }
+  return ok;
+}
+var _sembrando=false;
+async function sembrarTodasLasAreas(){
+  if(_sembrando) return; _sembrando=true;
+  try{
+    var total=0;
+    for(var a=0;a<AREAS.length;a++){
+      try{ total+=await sembrarArea(AREAS[a].id); }catch(e){ console.warn('Sembrar '+AREAS[a].id+' falló',e); }
+    }
+    if(total) console.log('✅ '+total+' insumos base creados en el servidor');
+  }finally{ _sembrando=false; }
+}
+
 // ============================================================
 // LOGIN
 // ============================================================
@@ -1154,6 +1194,7 @@ async function doLogin(){
     sesion=u;
     renderAreaScreen();
     mostrar('areaScreen');
+    sembrarTodasLasAreas(); // en segundo plano: asegura que TODOS los insumos existan en el servidor (Google Sheets los ve completos)
   }catch(e){
     mostrarError('loginError','Error de conexión. Intenta de nuevo.');
     console.error(e);
@@ -1197,6 +1238,7 @@ async function entrarArea(areaId){
   if(btnSh) btnSh.style.display=(sesion&&(sesion.admin||sesion.ver_sheets))?'inline-flex':'none';
   document.getElementById('searchInput').value='';
   await cargarInventario();
+  sembrarArea(areaId).catch(function(e){console.warn(e);});
 }
 
 function volverAreas(){
@@ -1242,7 +1284,9 @@ async function cargarInventario(){
     var base = ITEMS_BASE[areaActual.id];
     var dbMap={};
     rows.forEach(function(r){dbMap[r.item_id]=r;});
-    data = base.map(function(item){
+    data = base.filter(function(item){
+      var db=dbMap[item.id]; return !(db&&db.nombre===MARCA_ELIMINADO);
+    }).map(function(item){
       var db=dbMap[item.id];
       return {
         id:item.id,
@@ -1265,7 +1309,7 @@ async function cargarInventario(){
     // Agregar items extras de Supabase que NO están en ITEMS_BASE (ej: creados desde la app)
     var baseIds=new Set(base.map(function(i){return i.id;}));
     rows.forEach(function(r){
-      if(!baseIds.has(r.item_id)&&r.item_id&&r.nombre){
+      if(!baseIds.has(r.item_id)&&r.item_id&&r.nombre&&r.nombre!==MARCA_ELIMINADO){
         // Solo agregar si tiene nombre (evita items fantasma vacíos)
         data.push({
           id:r.item_id,
@@ -1274,7 +1318,7 @@ async function cargarInventario(){
           s:r.stock||0,p:r.a_pedir||0,
           pr:r.proveedor||'',nt:r.notas||'',
           tc:r.tc||3,tb:r.tb||8,ts:r.ts||25,
-          ss:r.ss||0,cmin:r.compra_minima||0,palt:r.proveedor_alt||''
+          ss:r.ss||0,cmin:r.compra_minima||0,palt:r.proveedor_alt||'',col:r.columna||''
         });
       }
     });
@@ -2245,8 +2289,19 @@ function editDir(id,field){
 async function borrar(id){
   if(!puedeEditar()||!confirm('¿Eliminar este insumo?'))return;
   data=data.filter(function(i){return i.id!==id;});
+  var esBase=(ITEMS_BASE[areaActual.id]||[]).some(function(b){return b.id===id;});
   try{
-    await sbDelete('inventario',{area:areaActual.id,item_id:id});
+    if(esBase){
+      // Insumo original del código: se marca como eliminado (si se borrara, volvería a aparecer)
+      var url=SB_URL+'/rest/v1/inventario?area=eq.'+areaActual.id+'&item_id=eq.'+id;
+      var r=await fetch(url,{method:'PATCH',headers:sbHeaders({'Prefer':'return=representation'}),body:JSON.stringify({nombre:MARCA_ELIMINADO,updated_at:new Date().toISOString()})});
+      var upd=r.ok?await r.json():[];
+      if(!upd.length){
+        await fetch(SB_URL+'/rest/v1/inventario',{method:'POST',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify({area:areaActual.id,item_id:id,nombre:MARCA_ELIMINADO})});
+      }
+    } else {
+      await sbDelete('inventario',{area:areaActual.id,item_id:id});
+    }
   }catch(e){console.error('Error eliminando:',e);}
   if(vistaActual==='tabla') renderTabla(); else renderLista();
   showToast('🗑️ Eliminado');
@@ -2430,7 +2485,7 @@ function generarTexto(fmt){
           var stockTxt=i.s>0?'Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'?' ('+i.u+')':''):'Sin stock';
           var _altP=i.palt||'Botillería Las Copas';
           var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin&&i.pr!==_altP)?'\n    ⚠️ Mínimo '+i.cmin+' und con CCU → alternativo: '+_altP:'';
-          t+='  '+cantStr+' '+i.n+' '+stockTxt+_cminTxt+'\n';
+          t+='  '+cantStr+' '+i.n+_cminTxt+'\n';
         });
       });
     }
@@ -2439,13 +2494,13 @@ function generarTexto(fmt){
     if(fmt==='tabla'){
       var maxN=8;con.forEach(function(i){var n=nombreFmt(i);if(n.length>maxN)maxN=Math.min(n.length,30);});
       t+='\n'+pad('PRODUCTO',maxN)+' | CANT\n'+'-'.repeat(maxN)+'-+------\n';
-      cats.forEach(function(catObj){
+      _ordenCatsTexto(grpC).forEach(function(catObj){
         if(!grpC[catObj.nombre])return;
         t+=catObj.nombre.toUpperCase()+'\n';
         grpC[catObj.nombre].forEach(function(i){t+=pad(nombreFmt(i),maxN)+' | '+pad(i.p,4)+' und\n';});
       });
     } else {
-      cats.forEach(function(catObj){
+      _ordenCatsTexto(grpC).forEach(function(catObj){
         if(!grpC[catObj.nombre])return;
         t+='\n*'+catObj.nombre.toUpperCase()+'*\n';
         grpC[catObj.nombre].forEach(function(i){
@@ -2457,7 +2512,7 @@ function generarTexto(fmt){
           var stockTxt=i.s>0?'Stock actual: '+i.s+' und'+(i.u&&i.u!=='Unid'?' ('+i.u+')':''):'Sin stock';
           var _altP=i.palt||'Botillería Las Copas';
           var _cminTxt=(i.cmin>0&&i.p>0&&i.p<i.cmin&&i.pr!==_altP)?'\n    ⚠️ Mínimo '+i.cmin+' und con CCU → alternativo: '+_altP:'';
-          t+='  '+cantStr+' '+i.n+' '+stockTxt+_cminTxt+'\n';
+          t+='  '+cantStr+' '+i.n+_cminTxt+'\n';
         });
       });
     }
@@ -2465,6 +2520,11 @@ function generarTexto(fmt){
   return t;
 }
 
+function _ordenCatsTexto(grp){
+  var lista=(cats||[]).slice();
+  Object.keys(grp).forEach(function(k){ if(!lista.some(function(c){return c.nombre===k;})) lista.push({nombre:k}); });
+  return lista;
+}
 function actualizarTextoPedido(){
   if(textoEditadoManual)return;
   renderPedidoBody();
@@ -3066,7 +3126,7 @@ function generarTextoUnificado(){
       var l=grpA[area]; if(filtroExportUnif==='ruta') l.sort(cmpRuta);
       l.forEach(function(i){
         var provTxt=i.pr?' ['+i.pr+']':'';
-        t+='  '+_cantTxt(i)+' '+i.n+provTxt+' '+_stockTxt(i)+'\n';
+        t+='  '+_cantTxt(i)+' '+i.n+provTxt+'\n';
       });
     });
   } else {
