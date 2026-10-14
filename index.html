@@ -8,6 +8,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8D%B8%3C/text%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NY Bar">
+<meta name="theme-color" content="#0A0906">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>NY Bar · Inventario</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -199,6 +202,175 @@ input::placeholder{color:#5a4a30}
 .pc-pend.on{color:#FBBF24;font-weight:600}
 .pc-card.mod{border-color:rgba(251,191,36,.6)!important}
 #btnGuardarProv[disabled]{opacity:.45;cursor:default}
+
+/* ════════════════ iOS / TÁCTIL ════════════════ */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,.chip,.cv,.dd-btn,.dd-item,select{touch-action:manipulation}
+body{overflow-x:hidden}
+.m-only{display:none!important}
+.inv-toprow{display:flex;align-items:center;justify-content:space-between}
+.m-top-acts{display:none;gap:8px}
+.sheet-hdr{position:sticky;top:0;z-index:30;background:var(--dark2);margin:0 -22px 12px;padding:8px 22px 10px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sheet-hdr .sheet-handle{margin:0 auto 8px;width:44px;height:5px;background:rgba(255,255,255,.22)}
+.sheet-hdr-row{display:flex;align-items:center;gap:12px;min-height:44px}
+.sheet-hdr-row .sheet-title{flex:1;margin:0!important;line-height:1.1}
+.sheet-hdr .sheet-close,.pc-x{position:static!important;flex-shrink:0;width:44px!important;height:44px!important;border-radius:50%;background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.14)!important;color:var(--text)!important;font-size:19px!important;display:flex!important;align-items:center;justify-content:center;cursor:pointer}
+.sheet-hdr .sheet-close:active,.pc-x:active{background:rgba(239,68,68,.3)!important}
+.overlay.closing{opacity:0;transition:opacity .18s ease}
+.overlay.closing .sheet{transform:translateY(40%);transition:transform .18s ease}
+.sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheet.arrastrando{transition:none!important;animation:none!important}
+html.modal-open,html.modal-open body{overflow:hidden}
+.no-anim .card{animation:none!important}
+.no-anim .cv{animation:none!important}
+
+/* Menú de acciones */
+.act-item{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:12px 14px;margin-bottom:8px;background:var(--dark3);border:1px solid var(--border);border-radius:14px;color:var(--text);font-size:16px;font-weight:600;text-align:left;cursor:pointer}
+.act-item .ai{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.act-item .ad{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
+.act-item.peligro{border-color:rgba(239,68,68,.3);color:#FCA5A5}
+
+/* Hoja numérica */
+.num-sub{font-size:13px;color:var(--muted);margin:-4px 0 14px}
+.num-wrap{display:flex;align-items:center;gap:10px;background:var(--dark3);border:2px solid rgba(217,119,6,.55);border-radius:16px;padding:6px 16px;margin-bottom:14px}
+.num-input{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--gold4);font-size:40px!important;font-weight:700;text-align:center;padding:8px 0;font-family:'DM Sans',sans-serif}
+.num-unit{font-size:17px;color:var(--muted);font-weight:600}
+.num-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.num-quick button{min-height:52px;background:var(--dark4);border:1px solid var(--border);border-radius:12px;color:var(--gold4);font-size:17px;font-weight:700;cursor:pointer}
+
+@media (hover:hover){.ped-row:hover{background:rgba(255,255,255,.03)}}
+@media (hover:none){.ped-row:hover,.tbl tr:hover td,.dd-item:hover{background:transparent}}
+
+/* ════════════════ TELÉFONO ════════════════ */
+@media (max-width:700px){
+  .m-only{display:inline-flex!important}
+  .d-only{display:none!important}
+  /* Sin zoom al tocar campos en iOS: mínimo 16px */
+  input,select,textarea,.tbl-inp,.tbl-sel,.finp,.fsel,.field-input,.search-input{font-size:16px!important}
+
+  /* Encabezado */
+  #invHeader{padding:calc(env(safe-area-inset-top,0px) + 4px) 0 10px}
+  .inv-inner{padding:0 14px}
+  .back-btn{font-size:17px;color:var(--gold4);font-weight:600;padding:0 12px 0 0;min-height:44px}
+  .m-top-acts{display:flex}
+  .m-top-btn{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(217,119,6,.4);color:var(--gold4);font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .m-top-btn.m-add{background:linear-gradient(135deg,var(--gold1),var(--gold2));border:none;color:#fff;font-size:24px}
+  .inv-header-row{flex-wrap:wrap;gap:10px;margin-top:2px}
+  .inv-header-row > div:first-child{width:100%}
+  .inv-header-row > div:first-child > img{display:none!important}
+  .inv-title{font-size:28px;line-height:1}
+  .inv-sub{font-size:11px}
+  .header-btns{width:100%}
+  .header-btns > .hbtn{display:none!important}
+  .header-btns > div{flex:1;margin:0!important;padding:3px!important;border-radius:12px!important;gap:3px!important}
+  .vista-btn{flex:1;min-height:40px;font-size:15px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:5px;padding:4px 2px}
+  .vista-btn::after{content:attr(data-l);font-size:12px;font-weight:600}
+  .kpi-row{gap:6px;margin-top:10px}
+  .kpi{padding:8px 2px;border-radius:10px}
+  .kpi-val{font-size:22px}
+  .kpi-lbl{font-size:9px}
+
+  /* Búsqueda + filtros fijos arriba al hacer scroll */
+  .inv-filtros{position:sticky;top:0;z-index:20;background:var(--dark);padding-top:env(safe-area-inset-top,0px);border-bottom:1px solid rgba(217,119,6,.15)}
+  .search-wrap{display:flex;gap:8px;padding:10px 14px 4px}
+  .search-input{flex:1.3;min-width:0;height:46px;border-radius:12px;padding:0 12px!important}
+  #provSelect{flex:1;min-width:0;height:46px;margin-top:0!important;border-radius:12px!important;padding:0 10px!important;font-size:15px!important;text-overflow:ellipsis}
+  .chips{padding:8px 14px 10px;gap:8px;scroll-padding:14px}
+  .chip{min-height:38px;padding:8px 15px;font-size:12px;border-radius:20px;display:inline-flex;align-items:center}
+
+  /* Tarjetas */
+  .inv-list-inner{padding:0 12px}
+  .sec-head{font-size:12px;padding:16px 2px 8px}
+  .card{padding:14px;border-radius:16px;margin-bottom:10px}
+  .card-name{font-size:17px}
+  .cat-badge{font-size:11px;padding:3px 9px}
+  .card-meta{font-size:13px}
+  .status-pill{font-size:13px}
+  .card-row{flex-wrap:wrap;gap:10px}
+  .card-row > div:first-child{flex:1;min-width:0}
+  .ctrs{width:100%;gap:10px}
+  .ctr-box{flex:1;min-width:0}
+  .ctr-lbl{font-size:11px;margin-bottom:5px;font-weight:700}
+  .ctr{width:100%}
+  .cb{width:48px;height:48px;font-size:24px;flex-shrink:0}
+  .cb:first-child{border-radius:12px 0 0 12px}.cb:last-child{border-radius:0 12px 12px 0}
+  .cv{flex:1;width:auto;height:48px;font-size:20px;min-width:0}
+  .card-acts{margin-top:12px;gap:8px}
+  .abtn{min-height:42px;padding:8px 16px;font-size:14px;border-radius:10px}
+  .card-note{font-size:12px}
+  /* vista compacta/mini: botones medianos */
+  .card[style*="padding:8px"] .cb,.card[style*="padding:10px"] .cb{width:40px;height:40px;font-size:20px}
+  .card[style*="padding:8px"] .cv,.card[style*="padding:10px"] .cv{height:40px;min-width:40px;font-size:16px}
+  .card[style*="display:flex"]{flex-wrap:wrap}
+
+  /* Tabla: columna del insumo fija al deslizar */
+  .tbl{font-size:14px}
+  .tbl td:first-child,.tbl th:first-child{position:sticky;left:0;background:var(--dark2);z-index:3;min-width:150px;box-shadow:2px 0 6px rgba(0,0,0,.4)}
+  .tbl th:first-child{z-index:4;background:#1C1408}
+  .tbl-inp{min-height:40px}
+  .tbl-sel,.dd-btn{min-height:38px;font-size:14px!important}
+  .tbl-del{min-width:40px;min-height:40px;font-size:15px}
+  .dd-item{min-height:48px;display:flex;align-items:center;font-size:16px;padding:12px 16px}
+  .dd-list{max-height:55vh;border-radius:14px}
+
+  /* Barra inferior */
+  #invBar{padding:10px 0 calc(env(safe-area-inset-bottom,0px) + 10px);background:linear-gradient(0deg,var(--dark) 82%,rgba(10,9,6,0))}
+  .inv-bar-inner{padding:0 14px}
+  .save-snap-btn{display:none}
+  .bottom-row{gap:8px;align-items:stretch}
+  .bprim{min-height:56px;font-size:16px;border-radius:14px}
+  .bsec{min-width:62px;min-height:56px;border-radius:14px;padding:4px 6px!important;font-size:20px!important;flex-direction:column;align-items:center;justify-content:center;display:inline-flex;gap:2px}
+  .bsec[data-l]::after{content:attr(data-l);font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap}
+  .bsec.on[data-l]::after{color:#4ADE80}
+  body.kb-open #invBar{display:none}
+  #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 92px);max-width:calc(100vw - 32px);text-align:center;font-size:14px;padding:12px 18px;border-radius:14px}
+
+  /* Hojas (ventanas) */
+  .overlay{align-items:flex-end}
+  .sheet{padding:0 18px calc(env(safe-area-inset-bottom,0px) + 22px);max-height:calc(100vh - env(safe-area-inset-top,0px) - 12px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - 12px);border-radius:22px 22px 0 0}
+  .sheet-hdr{margin:0 -18px 14px;padding:8px 18px 10px}
+  .sheet-title{font-size:24px}
+  .flbl{font-size:12px;margin-bottom:6px}
+  .finp,.fsel{min-height:48px;border-radius:12px;padding:10px 14px}
+  .r3{gap:8px}
+  .btnrow{gap:10px;margin-top:10px}
+  .btnrow .bprim,.btnrow .btn-secondary{min-height:52px;font-size:16px;border-radius:14px}
+  .btn-primary{min-height:52px;font-size:16px;border-radius:14px}
+  .btn-secondary{min-height:48px}
+  .ebtn{min-height:52px;font-size:15px;border-radius:14px}
+  .ebox{font-size:15px!important}
+  .tab,.pc-chip,.fmt-row .chip{min-height:40px;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+  .hist-act-btn{min-height:42px;font-size:13px;border-radius:10px}
+  .ped-row{padding:14px 6px}
+  .ped-qty{font-size:15px;padding:8px 16px}
+  .pc-sheet{padding:0 16px!important}
+  .pc-head{padding:8px 0 12px}
+  .pc-foot .bprim{min-height:54px}
+  #mUnificado button[onclick^="chgUnif"]{width:40px!important;height:40px!important;font-size:18px!important}
+  #mUnificado input[onchange^="editUnif"]{width:56px!important;height:40px!important;font-size:16px!important}
+  #mUnificado select{min-height:40px;font-size:14px!important;width:auto!important;max-width:130px}
+
+  /* Login y áreas */
+  .field-input{min-height:52px;border-radius:12px;padding:12px 16px}
+  .login-box,.area-btns{max-width:420px}
+  .area-btn{min-height:68px;border-radius:16px}
+  .area-btn-label{font-size:17px}
+  .logout-btn{min-height:44px;font-size:14px;padding:10px 20px}
+  #loginScreen,#areaScreen{padding:calc(env(safe-area-inset-top,0px) + 24px) 22px calc(env(safe-area-inset-bottom,0px) + 24px)}
+}
+
+@media (max-width:700px){
+  /* Vista Mini en teléfono: se toca el número para editarlo (abre el teclado con ±) */
+  .card-mini{padding:10px 12px!important;gap:10px!important}
+  .card-mini .cb{display:none!important}
+  .card-mini .cv{width:62px!important;height:44px!important;font-size:17px!important;border-radius:12px;border:1px solid var(--border)!important;background:var(--dark4)}
+  .card-mini .cv.g{border-color:rgba(74,222,128,.4)!important}
+  .card-mini span[style*="font-size:13px"]{font-size:15px!important}
+  .card-mini span[style*="font-size:10px"]{font-size:12px!important}
+  .card-mini div[style*="font-size:8px"]{font-size:10px!important;margin-bottom:3px}
+  .card-mini .abtn{min-width:44px;min-height:44px;padding:0!important;font-size:16px!important}
+  .card-mini{flex-wrap:nowrap!important}
+}
 </style>
 
 <script>
@@ -220,9 +392,9 @@ input::placeholder{color:#5a4a30}
   <div class="app-sub">SISTEMA DE INVENTARIO</div>
   <div class="login-box">
     <div class="field-label">Usuario</div>
-    <input class="field-input" id="loginUser" autocapitalize="none" autocorrect="off" placeholder="tu usuario">
+    <input class="field-input" id="loginUser" autocapitalize="none" autocorrect="off" autocomplete="username" spellcheck="false" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loginPass').focus();}" placeholder="tu usuario">
     <div class="field-label">Clave</div>
-    <input class="field-input" type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="field-input" type="password" id="loginPass" autocomplete="current-password" enterkeyhint="go" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="error-msg" id="loginError" style="display:none"></div>
     <button class="btn-primary" onclick="doLogin()" id="loginBtn">INGRESAR</button>
   </div>
@@ -240,7 +412,13 @@ input::placeholder{color:#5a4a30}
 <div id="invScreen" class="screen">
   <div id="invHeader">
     <div class="inv-inner">
-    <button class="back-btn" onclick="volverAreas()">← Áreas</button>
+    <div class="inv-toprow">
+      <button class="back-btn" onclick="volverAreas()">‹ Áreas</button>
+      <div class="m-top-acts">
+        <button class="m-top-btn m-add" onclick="abrirNuevo()" aria-label="Nuevo insumo">＋</button>
+        <button class="m-top-btn" onclick="abrirMenuAcciones()" aria-label="Más opciones">⋯</button>
+      </div>
+    </div>
     <div class="inv-header-row">
       <div style="display:flex;align-items:center;gap:12px">
         <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACWAJYDASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAYHAwUIBAkCAf/EAEAQAAEDBAECBAQEAwQIBwAAAAECAwQABQYRBxIhCBMxQRQiUWEVMnGBFlKRI0JykgkXJSYzYoKhU1djc5OV0v/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDjKlKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKkOHYRl+YyCxi+NXS7qSdKVFjKWhH+JWulP7kUEepV4xPCzyuYqZN3YsNgbUAf9pXVpGh9+jq1WU+GHKiAGM943kOnsGmr6Son92wKCiaVceReGbmO0RzKaxhF3ja2HbZLbkb/AESD1n9k1VF3tdys89cC726Xb5bf52JTKmnE/qlQBFB46UpQKUpQKUpQKUpQKUpQKUpQK3OGYvf8xyGNj+NWx+5XKSdNstD0HupRPZKR7qJAHvX6wbFr3mmVQMZx6GqVcZznQ0gdgkeqlqPslIBJPsAavDkTNLLwtj8nizimWly+rT5WT5S32eddHZTDCh3QlJ2Ox+XuB83Uqg/juL8QcIgHOnW+Qs4bHzWKE50wIK9flfc/vkH20fuj0NRXOPEZyZkLAt9rubWJ2ZsFDNusLfwqG0/TrT85/qB9hVQKUpaipSipROySdkmv5QeifNmXCSqTPlvy31fmcecK1H9Se9eelKDb45k+SY3ITIx+/wB0tLoPV1Q5S2u/36SN1cOP+I643O3t2HlzF7Vn9m/L5kllLU1kfVt1I9fvoKP8wqh6UF85Nwtj2YWGTl/BN7ev8NhPmTMdlAC5wh9kj/iJ+mu512KzVELQptakLSpK0nSkkaIP0NbXD8lvuIZDGv8AjdzkW25RlbbeZVo/dJHopJ9Ck7BHqKvrKLVZfENhU/OMUtrFt5Js7PnX+zRhpF0aHrJYT6lf1Hc7+U7JQVBzdSlKBSlKBSlKCS8c4LlHIORIsOJ2p24TFJ63NEJbZRvRW4s9kpG/U+p0BskCui8b8Ft0uUF5Urkeyomx1ll9iFFVJQy8ACW1L60kEAjY6d9x2re42tzh7wLLyjG1CPkWTKQp2e3+dvzXClOleo6Ggenv8q1FQ9TV1eEG0NY9wDi7clxCZ14Q5cXCtQC31uqUsH6qPl9H7Cg+ceeY5MxDNLxi89aHJNrmORVuIBCXOhRAWN99EaI+xqwr9whNsnANv5Zn5DFbbuHliPbfhleYrrcKU/PvX5AV+noNVI/HfjTlr8Q8mTHYURfYceW2lI7KXrySB9yWt/8AV96tXxjOWXGsS4j40u65H4PGdacuSIiep0sx20M/KNjalBbmu/qKCtrA+eCvD+zkkfTOfZ+ypFvd9HLdbBolxJ9Qpe0qB3/eQfVsg86EknZOzXTvNXGPMXMmaysysmBToOPtRmotmhznmIrzcVtPypDSlgp2SpWv+bQqmMS4m5Fyu73e02HFZsqdZnA1cWVKQ0qMslQCVdah32hXb7GghFKlw41zg8iHj1NgeVlA9bel1sqH9l5vdXV0/k+b1/71tLpwtyZasrseL3TGHYd1vri27eyuQ0fN6NdZJSohISCCSddt/Sgr2v002466hppCnHFqCUpSNlRPoAPc1LOVeOsp4yyNFhyuG1HlOsJkMqZdDjbrZJG0qH3SQQdHt+lXz4IMWsdvxnMuYrzDbnv4yw7+Hsr1ptbbJdcc1/MR0pSfbavfWgi/HPhT5AyZTH43OtWLLfZL7UOe4VTVtAgFfkJ7pSCQD1FJBI7VDvEPw/ceHckt9om3Vm6tT4nxDUlpktDYWUqRok9xpJ3v+8KlXhv5Nvk3xV2fKMmubkuTfZC4Epa1dtPApbQkeiUJX5ekjsANVff+kXxZ668f47kMSMt+RbbmYqg2klXRITr29fnbbH6qoOSsU4zl3nibJeSJl2j2y02Z5EZlLjRWubIVr+yRo9iOpGz9Fb9Aa0PHWX3nBMyt2VWF/wAqbBdCwD+R1HoptY90qGwf17aOjVveJmSnD8Rw3gu2EKXY4yLhfPKPV5txfSVdP36UrOvs4ke1RuzeG/mm7Wf8VjYPKbYKAtCJMhlh5Y+za1hQP2IFBsvFDjNnfdsnLeHR/KxrM2lSFsJ9IU5PZ9k67Dago/4g5rsBVJ1efF8+TcuPMs4BvlgvEq/ypol4/FaYT5kW4NJV5qV9ak9CSlGifYFw+9RK5cG8r26/W+xSsLn/AIlcUOORo7TjbpUhvpC1qKFEISCtI6lEDZoINY7Rdb7dWLVZbbLuU98kMxorKnXV6BJ0lIJOgCT9ga3OcYDmOENwF5bj8yzi4BZiiSAlTgR09XbexrqT669a6N8D/G2RY5z/AHf+LLNJtk2y2grDTyRvrfUlKFAjYUkpDo2CRsH6GtD4+7nLyLn2HjVuZelvW63MRm47CCta3nSXNJSNkkpW2ND6UHNVKlOf8fZbgT0WPl1qTa5EtvzGWFymlulH8xQhRKR/iApQb2wclZnP44HDoEO5WW4Sm0Q2n2Sp6K6p0KT5S0kEbWfQhX5lD3rr7nDLInH/AC7wdisVxKI0B/oe3/cZcbTDQo/bpU6f2rlPwiWA5F4h8TjqbCmokoz3CR2T5CS4k/50oH71vPG5kzl38Rt0+GfV02VqPCYWk/lUhPmK1+ji1/0oOovFHgTeT8o8RXTyQUov4iSzr87QAkBJ/Zh3/NWwh4zBz3xWXnKLowJEHBYUS329CwFNqnOJU+tz7qbS4kd/RSkn1TVp4VdIeXYXjuSlpp0TITE9olIPlrW13I+hAWpP7kVWXhCvkPJMYzS+xZHmruGZXCU4CrZSlQb8sfp5YQB+lBAbzMyPkjxZJuZmPWzj7jl9SpM5bhajl9pJLu1HQKi58iu+g2gntvRsTwxTIeTv59yNBZ6IuRZEtMNeiPNixmkNNuEHuCo+Yde265h5esfiW5Dzy5Yhc7dkk22N3BxMZtMcR7cWw4fLWVpCW1ADRClEn966u4txx/EPDQxYcVnQb5cYtnlGLIt7wLMqWrzFf2a/QjzT0hR16e1BQvhN/wB9/Fpn2eK05GjfFKjq9enzXuhrv/7SViol4580ukbxH282Ke9Dm43AjpYdZV8zb6yp0kfcpWga9wPvV7+BzjK88eYTeJGTRkQr1d5La1wytKnWGEJIb8zX5VKKnDr6a99gVoniS9XHxI5VyryjERY8Kstzdn+fLcSRMQ0dRwkAklOktk9u/wCQAk9grzxwTJ38WYZZrvLcl3i3YtFTc3nNdSpKysr3r32N/vVV4DyTlmEWq92ixzmxbL5GVGuEN9lLjTyVJUnej3SrpUobBHr332r88x5o/wAhcm33L30LbTcJJUw0v1aZSAhpB122EJSDr1OzURoPRbpci33CNPir8uRGdS80r+VaSCD/AFFfWDJ7pY5PFv8AFmS27rt8OC1fHIzn5kLZSmQga91JUkaH1FfLfjewLynkDH8cQnf4lcWIyvslawFH9ANn9q+hPjdvyMf8Ol5jtqDTt0dYtzIHb8ywpQ/+NtdBTfgqxBzkfknI+astZRKdZuCzBQobQJa/nUsA/wDhJUgJHt1AjRSKy5ZyUrOfGzYMZkZFcLTjeP3X4SMiI4UiTMb3vr1vYW8A132Oge3UTVneAJyEvw9RkxVJLyLnKTKA9Q5sEb+/QW/+1VJ4f+Hcjx7my98k8kQTY7Fjr0uaJMxQCZDpK9LT9UJBUvq+oSBvZ0F0WLBsWe8YN/zKNkcd+9w7Y0ZFnbhL6o6nGkNh1bxPR1KQOyQNkK2fvWfik8QWVYDz3bbJYnmjZ7S3GfukNKEpXNUrai2pwpJSny1p0B6FRJ321YXhGuP8Z3XkflHyVtt5DfUx4nmDSvhozQS1sfXpcAP3B+lcQeIS/fxLzdmF4SvrbcurzTSvq22fLQf8qE0HfHhmzSZymzkHJMy0M2pqS+3aoEcK8xaY8dJWVKc0Oolx9fsNa139TgtnHmOS8zza94lnVuPIkyUfi7mGGZj1naUOlDCGerSD0J6epXc6O/oMHESU8aeDeHdFAMPxsefuxOtKU66lbyAfv86E/wBKqT/RpwG3H83vC3eqQBEY6d9wFF1RJ/UpH9DQc1c54tkeHcp3ux5Vcl3W6IeDrk9a1KMtK0hSXCVd9kEbGzo7GzqlWN44rHlrXNd3yS9Wh6LaJbjUa2SCpJQ8htlA+XR367J+hOqUFV8aZ9k/HN/cv2JzGYdwcjqjF1yO29ptSkqIAWCAdpHf19frWmyG73C/36ffLtIMi4XCQuTJdKQnrcWoqUdDsO5PYdhXgpQWpjHiD5XxvDo+J2jI0MWqMwqOy2qEytaEKJ7BZSVf3jrv27VtvB7Ly17lBWN4nnD+KybnEdUlQiIlMyXGklaULaWen8oX83qO+vWqVqQ8a5RIwvP7HlcVKlrtk1uQpCTouIB+dH/UnqT+9BOOSefeX8riybBf8kehxgpTUmJDZRG6iDpSFlACiO2iknX2rzccc+coYBjf8O45kCW7YgqLDMiM28I5UdnoKgSASSddxsk62TWx8XGLRrHyw9kFnIdx/LGEXu2PoB6FpeHUsD/rJOvZK01XGFWeBfsjj2u55BCx+K6lZXPmJUppspQVAEJBPcgJH3NBKsR5s5NxfLbplNtyiSu53YpNxXKQl5Mnp2EdSVAgdIJCda6R2Gh2rHyhzLyLySwiJlWQuyILautMNhtLLHUPQlKAOojfYq2R7Vv8V4mi3yVx8oJvgg3+2SZtxeYYDh8xl2UAwwSAkOOJYQlKVE/O4PqBWwu/FFlm4LLyWxWvJYFxctwkRMflqS9LSpE9mOt0BLaVOMqQ6dHpSQtCh3A3QUhSuh7/AMEY7HcuCrdeZpNuYvb0uNJcSlxLMR19liShQR0uNh1pKXkj5k72Ox7euJwXjMnKG7ImFkbMe23hNtuM5+UhC5yVR3VofZZ8khLS1t7QpK3T5YJI3rYUNhWTXjDsohZLYH249zgqUuO6tpLgSSkpJ6VAg9lH1FSjlDmbkPkq1RbXl96bnRIr/wAQ02iI0yA50lPUehI32JHf6mpJiWAYfds3yyNNZuDNqsttYkstsznF9Slvx2lEufCeYpIDqlABgdwBvXzVJpHhzbiRC7JeuyVoy5MFbZU0Fm0KliIHwgbV5pcIOwC30ne99qCpOM+TM343nPysOvz9u+IAEhnpS4y9reiptYKSRs6OtjZ0a2nJvNXJXIsBNuynJHX7elQV8Gw0hhlSgdgqSgDr0e46t69q3PKHGeNWK/PRoGRxrU0iwuXVtubK+KRLWl5aG2Y77baUuqcSkK/KAlXUgnaSRUVB0X4S805Tu12icZ4vmTGNWOMxJnSJf4THkqjoG1qUesfNtakp7nsD9tVz1OUhU19Tbq3kFxRS4saUsb7Ej6mr84pH+rjwz5lyJJHlXTLP93bHsaUWjv4hwH6dlDfspoD3Fc+0FpZPz9ylkeFv4ddL8wqyvsIjrYagMNHy0FJSkKSkED5QPX07VF+NOQsv44va7viF3ct8h1vynk9CXG3keuloUCk69jrY9iKitKCX8o8kZhyXemrrl91VNdYbLcdpKA20wk9yEIT2BJA2fU6Gz2GlRClApSlApSlB0RxIqNzRw87w7cJDTWW2AuT8RkPKA89v8z0QqP7kd/TR9G9Hn64Q5VvnyIE6O7GlxnVMvsupKVtrSdKSoHuCCCCKyWe5T7PdYt1tct2HOiOpejvtK0ttaTsKB+xro25W+w+Jmz/jFjVCsvLUOOPj7apQaYviEJ/4rRPYOaHv6a0flAWA58ZyXI2bSi0M3+6t21tYcRERMcDKVBXUFBAPSCFd969e9Zf4tyo3z8d/ia9fi3l+X8d8e78R0a10+Z1dWtdtbrw3q13Gy3WTabvBkQZ8Vwtvx32yhbah7EGvHQev8TuWmx+IS9NIcbbHnK+RLm+tI79grqVse+zv1r2/xTk3kwGf4iu/l23vBR8a50xe2v7Ib+Tt2+XVaelBum8sypu8u3pvJbyi6PIDbs1M50PrSNaSXOrqI7DsT7CvMi+3tEgSEXi4peDXkhwSVhXl9XV0b3vp6u+vTfetdSgzypkyU2y3JlvvoYCktJccKg2FKKiEg+m1KUTr3JPvUw4U46unJudxcegEsRR/bXGaofJDjJPzuKPpvXYA+pIHYbIxcT8a5VyZkSbRjcLqQjSpc17aY0RHutxft76A2TrsDVmcp5zinH+ByuH+JZvxzUs6ybI09l3JY7Floj0ZHcdiQQSASFKUsI14l88tWUZNAxnEQGsMxSN+G2dCT2e1oOPn6lZSO59QkE9yaqalKBSlKBSlKBSlKBSlKBWaDLlQJjM2DJeiymFhxp5lwoW2odwpKh3BH1FYaUHQNp5oxDkG1MY/zzjy7i6ygNRMntaA3Pjj/wBQDs4P2I/5VHvWGd4c15E25cOH86sGbQdFQimQmLObHqAtteh+5Kf0FUJWSO89HfQ/HdcZdQdoWhRSpJ+oI9KCcXvhvlazOqbnceZIOk6K2YDj6P8AO2FJ/wC9aZjA85fd8pnDMjdc/kRbHif6BNeyPylybHZSzH5Fy9lpI0lCL3JSkD7ALrJ/rY5T/wDMvM//AL2T/wDug3uL+H3mLIXUIiYHdYiFerlwQIiUj6nzSk/0BqZR+JuK+Oj8Zy9yFFuk5sdQx7Gl+e6s/wArjvYI/Q9P2VVQ3rPs7vcYxbzmuSXJg+rUu6PPIP7KURUboLf5Q5yud/x9WFYXaIuF4SnaRbIHZySPcvueqyfceh9+rW6qClKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKD/9k=" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid rgba(217,119,6,.4);flex-shrink:0">
@@ -251,10 +429,10 @@ input::placeholder{color:#5a4a30}
       </div>
       <div class="header-btns">
         <div style="display:flex;background:rgba(255,255,255,.06);border-radius:8px;padding:2px;gap:1px;margin-right:4px">
-          <button class="vista-btn" id="vistaNormal" onclick="setVista('normal')" title="Vista normal">▤</button>
-          <button class="vista-btn" id="vistaCompacta" onclick="setVista('compacta')" title="Vista compacta">▥</button>
-          <button class="vista-btn" id="vistaMini" onclick="setVista('mini')" title="Vista mini">▦</button>
-          <button class="vista-btn active" id="vistaTabla" onclick="setVista('tabla')" title="Vista tabla">⊞</button>
+          <button class="vista-btn" id="vistaNormal" data-l="Lista" onclick="setVista('normal')" title="Vista normal">▤</button>
+          <button class="vista-btn" id="vistaCompacta" data-l="Compacta" onclick="setVista('compacta')" title="Vista compacta">▥</button>
+          <button class="vista-btn" id="vistaMini" data-l="Mini" onclick="setVista('mini')" title="Vista mini">▦</button>
+          <button class="vista-btn active" id="vistaTabla" data-l="Tabla" onclick="setVista('tabla')" title="Vista tabla">⊞</button>
         </div>
         <button class="hbtn" onclick="abrirHistorial()">📅</button>
         <button class="hbtn" onclick="abrirCentral()" style="color:#4ADE80;border-color:rgba(74,222,128,.3)" title="Central de Pedidos">🗂️</button>
@@ -268,22 +446,60 @@ input::placeholder{color:#5a4a30}
     <div class="kpi-row" id="kpis"></div>
     </div>
   </div>
+  <div class="inv-filtros" id="invFiltros">
   <div class="search-wrap">
-  <input class="search-input" id="searchInput" style="width:100%" placeholder="🔍  Buscar insumo…" oninput="renderLista()">
+  <input class="search-input" id="searchInput" style="width:100%" placeholder="🔍  Buscar insumo…" oninput="renderLista()" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off">
   <select id="provSelect" onchange="setProv(this.value)" style="width:100%;margin-top:8px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;-webkit-appearance:none;font-family:'DM Sans',sans-serif">
     <option value="Todos">🏪 Todos los proveedores</option>
   </select>
 </div>
   <div class="chips" id="chips"></div>
+  </div>
   <div id="invContent"><div class="inv-list-inner"><div class="loader">Cargando inventario…</div></div></div>
   <div id="invBar">
     <div class="inv-bar-inner">
     <button class="save-snap-btn" onclick="guardarSnapshot()">📅 GUARDAR SNAPSHOT DE HOY</button>
     <div class="bottom-row">
+      <button class="bsec m-only" data-l="Snapshot" onclick="guardarSnapshot()" aria-label="Guardar snapshot">📅</button>
       <button class="bprim" id="btnPedido" onclick="abrirPedido()">📋 VER PEDIDO</button>
-      <button class="bsec" id="btnSolo" onclick="toggleSolo()">🛒</button>
-      <button class="bsec" onclick="sincronizarTodos()" title="Sincronizar todos los items con el servidor" style="font-size:13px;padding:13px 10px">☁️</button>
+      <button class="bsec" id="btnSolo" data-l="Solo pedido" onclick="toggleSolo()" aria-label="Ver solo lo que hay que pedir">🛒</button>
+      <button class="bsec d-only" onclick="sincronizarTodos()" title="Sincronizar todos los items con el servidor" style="font-size:13px;padding:13px 10px">☁️</button>
     </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- OVERLAY: MENÚ DE ACCIONES (móvil) -->
+<div class="overlay" id="mAcciones" style="display:none;z-index:160" onclick="if(event.target===this)cerrar('mAcciones')">
+  <div class="sheet act-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="cerrar('mAcciones')" aria-label="Cerrar">✕</button>
+    <div class="sheet-title">OPCIONES</div>
+    <div id="accionesBody"></div>
+  </div>
+</div>
+
+<!-- OVERLAY: EDITAR CANTIDAD -->
+<div class="overlay" id="mNum" style="display:none;z-index:170" onclick="if(event.target===this)cerrar('mNum')">
+  <div class="sheet num-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="cerrar('mNum')" aria-label="Cerrar">✕</button>
+    <div class="sheet-title" id="numTitulo">CANTIDAD</div>
+    <div class="num-sub" id="numSub"></div>
+    <div class="num-wrap">
+      <input id="numInput" class="num-input" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();guardarNumSheet();}">
+      <span class="num-unit" id="numUnit"></span>
+    </div>
+    <div class="num-quick">
+      <button onclick="ajNumSheet(-1)">−1</button>
+      <button onclick="ajNumSheet(-0.5)">−0,5</button>
+      <button onclick="ajNumSheet(0.5)">+0,5</button>
+      <button onclick="ajNumSheet(1)">+1</button>
+    </div>
+    <div class="btnrow">
+      <button class="btn-secondary" style="flex:1" onclick="document.getElementById('numInput').value='0'">Poner en 0</button>
+      <button class="bprim" style="flex:2" onclick="guardarNumSheet()">GUARDAR</button>
     </div>
   </div>
 </div>
@@ -2183,7 +2399,7 @@ function renderLista(){
         var ssLabel=item.ss>0?(_esCont?fmtNum(item.ss)+' '+item.u:fmtNum(item.ss)+' unid'):'';
 
         if(vistaActual==='mini'){
-          html+='<div class="card '+st.cl+'" style="animation-delay:'+delay+'s;padding:8px 12px;display:flex;align-items:center;gap:8px">';
+          html+='<div class="card card-mini '+st.cl+'" style="animation-delay:'+delay+'s;padding:8px 12px;display:flex;align-items:center;gap:8px">';
           html+='<span style="width:7px;height:7px;border-radius:50%;background:'+st.co+';flex-shrink:0;display:inline-block"></span>';
           html+='<div style="flex:1;min-width:0;overflow:hidden"><span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">'+item.n+'</span>';
           html+='<span style="font-size:10px;color:var(--muted)">'+item.u+(item.pr?' · '+item.pr:'')+'</span></div>';
@@ -2250,7 +2466,7 @@ function renderLista(){
             html+='</div>';
           }
           html+='</div>';
-        }        html+='</div>';
+        }
       });
     });
   }
@@ -2297,17 +2513,43 @@ function chg(id,field,delta){
   item[field]=sumNum(item[field],delta);
   cambiosSinGuardar=true;
   persistir(item); // async, fire-and-forget OK for +/- buttons
-  renderLista();
+  _renderSuave();
 }
 function editDir(id,field){
   if(!puedeEditar())return;
   var item=data.find(function(i){return i.id===id;});
   if(!item)return;
-  var lbl=field==='s'?'Stock actual':'Cantidad a pedir';
-  var v=prompt(lbl+' de "'+item.n+'" (puedes usar decimales, ej: 1,5):', fmtNum(item[field]));
-  if(v===null)return;
-  if(!numValido(v)){showToast('Número inválido');return;}
-  item[field]=toNum(v);persistir(item);renderLista();
+  abrirNumSheet({
+    titulo:item.n,
+    sub:field==='s'?'Stock actual':'Cantidad a pedir',
+    valor:item[field],
+    unidad:item.u,
+    onSave:function(n){ item[field]=n; cambiosSinGuardar=true; persistir(item); _renderSuave(); }
+  });
+}
+var _numCb=null;
+function abrirNumSheet(o){
+  _numCb=o.onSave;
+  document.getElementById('numTitulo').textContent=o.titulo||'Cantidad';
+  document.getElementById('numSub').textContent=(o.sub||'')+' · puedes usar decimales (ej: 1,5)';
+  document.getElementById('numUnit').textContent=(o.unidad&&!/^(unid|und|unidad|unidades)$/i.test(o.unidad))?o.unidad:'und';
+  var inp=document.getElementById('numInput');
+  inp.value=fmtNum(o.valor);
+  document.getElementById('mNum').style.display='flex';
+  inp.focus(); // dentro del toque: iOS abre el teclado
+  setTimeout(function(){ try{inp.select();}catch(e){} },30);
+}
+function ajNumSheet(d){
+  var inp=document.getElementById('numInput');
+  inp.value=fmtNum(sumNum(inp.value,d));
+}
+function guardarNumSheet(){
+  var v=document.getElementById('numInput').value;
+  if(!numValido(v)){ showToast('Número inválido'); return; }
+  var n=toNum(v);
+  document.getElementById('numInput').blur();
+  cerrar('mNum');
+  if(_numCb) _numCb(n);
 }
 async function borrar(id){
   if(!puedeEditar()||!confirm('¿Eliminar este insumo?'))return;
@@ -3498,6 +3740,125 @@ document.getElementById('loginPass').addEventListener('keydown',function(e){if(e
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar); else iniciar();
 })();
+
+// ════════════════ iOS / TÁCTIL: comportamiento ════════════════
+(function(){
+  var esMovil=function(){ return window.matchMedia('(max-width:700px)').matches; };
+
+  // Vista por defecto en teléfono: Lista
+  if(esMovil() && typeof vistaActual!=='undefined' && vistaActual==='tabla'){
+    vistaActual='normal';
+    ['Normal','Compacta','Mini','Tabla'].forEach(function(n){var el=document.getElementById('vista'+n); if(el) el.classList.toggle('active',n==='Normal');});
+  }
+
+  // Encabezado fijo en todas las ventanas: título + ✕ siempre visibles
+  function prepararHoja(sheet){
+    if(sheet.dataset.prep) return; sheet.dataset.prep='1';
+    var ov=sheet.closest('.overlay');
+    if(sheet.classList.contains('pc-sheet')){ habilitarArrastre(sheet, sheet.querySelector('.pc-head'), ov); return; }
+    var handle=sheet.querySelector(':scope > .sheet-handle');
+    var close=sheet.querySelector(':scope > .sheet-close');
+    var title=sheet.querySelector(':scope > .sheet-title');
+    if(!close && ov){
+      close=document.createElement('button'); close.className='sheet-close'; close.textContent='✕';
+      close.setAttribute('aria-label','Cerrar');
+      close.onclick=function(){ cerrar(ov.id); };
+    }
+    var hdr=document.createElement('div'); hdr.className='sheet-hdr';
+    var hh=handle||document.createElement('div'); hh.className='sheet-handle';
+    var row=document.createElement('div'); row.className='sheet-hdr-row';
+    if(title) row.appendChild(title); else { var sp=document.createElement('div'); sp.style.flex='1'; row.appendChild(sp); }
+    if(close){ close.setAttribute('aria-label','Cerrar'); row.appendChild(close); }
+    hdr.appendChild(hh); hdr.appendChild(row);
+    sheet.insertBefore(hdr, sheet.firstChild);
+    habilitarArrastre(sheet, hdr, ov);
+  }
+
+  // Deslizar hacia abajo para cerrar (desde el encabezado)
+  function habilitarArrastre(sheet, zona, ov){
+    if(!zona||!ov) return;
+    var y0=null, dy=0;
+    zona.addEventListener('touchstart',function(e){
+      if(e.target.closest('button,input,select,textarea')) return;
+      if(sheet.scrollTop>2) return;
+      y0=e.touches[0].clientY; dy=0; sheet.classList.add('arrastrando');
+    },{passive:true});
+    zona.addEventListener('touchmove',function(e){
+      if(y0===null) return;
+      dy=Math.max(0,e.touches[0].clientY-y0);
+      sheet.style.transform='translateY('+dy+'px)';
+    },{passive:true});
+    zona.addEventListener('touchend',function(){
+      if(y0===null) return;
+      sheet.classList.remove('arrastrando');
+      sheet.style.transition='transform .2s ease';
+      if(dy>110){
+        var btn=sheet.querySelector('.sheet-hdr .sheet-close, .pc-x');
+        sheet.style.transform='';
+        if(btn) btn.click(); else cerrar(ov.id);
+      } else sheet.style.transform='';
+      setTimeout(function(){ sheet.style.transition=''; },220);
+      y0=null; dy=0;
+    });
+  }
+
+  // Bloquear el scroll del fondo mientras hay una ventana abierta
+  function revisarModal(){
+    var abierto=[].some.call(document.querySelectorAll('.overlay'),function(o){ return o.style.display && o.style.display!=='none'; });
+    document.documentElement.classList.toggle('modal-open',abierto);
+  }
+
+  function iniciar(){
+    document.querySelectorAll('.overlay > .sheet').forEach(prepararHoja);
+    var mo=new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if(m.type==='attributes' && m.target.classList && m.target.classList.contains('overlay')){
+          var s=m.target.querySelector(':scope > .sheet'); if(s){ prepararHoja(s); if(m.target.style.display!=='none'){ s.scrollTop=0; s.style.transform=''; } }
+        }
+      });
+      revisarModal();
+    });
+    document.querySelectorAll('.overlay').forEach(function(o){ mo.observe(o,{attributes:true,attributeFilter:['style']}); });
+
+    // Teclado abierto (búsqueda en la lista) → ocultar barra inferior
+    document.addEventListener('focusin',function(e){
+      if(e.target.matches('input,textarea,select') && !e.target.closest('.overlay')) document.body.classList.add('kb-open');
+    });
+    document.addEventListener('focusout',function(){ setTimeout(function(){
+      var a=document.activeElement; if(!a||!a.matches('input,textarea,select')||a.closest('.overlay')) document.body.classList.remove('kb-open');
+    },60); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar); else iniciar();
+})();
+
+// Re-render sin reanimar tarjetas (botones + / − y edición rápida)
+function _renderSuave(){
+  var c=document.getElementById('invContent');
+  if(c) c.classList.add('no-anim');
+  if(vistaActual==='tabla') renderTabla(); else renderLista();
+  clearTimeout(window._naT); window._naT=setTimeout(function(){ if(c) c.classList.remove('no-anim'); },400);
+}
+
+// Menú de acciones (teléfono)
+function abrirMenuAcciones(){
+  var sheetsVisible=(function(){var b=document.getElementById('btnSheets');return b&&b.style.display!=='none';})();
+  var items=[
+    ['📅','Historial','Snapshots y pedidos guardados',"abrirHistorial()"],
+    ['🗂️','Central de pedidos','Pedido unificado de todas las áreas',"abrirCentral()"],
+    sheetsVisible?['📊','Google Sheets','Abrir la planilla',"abrirSheets()"]:null,
+    ['🏪','Proveedores','Catálogo, directo o ruta',"abrirProvCat()"],
+    ['🏷️','Categorías','Catálogo de categorías del área',"abrirCatCat()"],
+    ['📅','Guardar snapshot de hoy','Foto del inventario actual',"guardarSnapshot()"],
+    ['☁️','Sincronizar con el servidor','Reenviar todos los insumos del área',"sincronizarTodos()"],
+    ['🔄','Reiniciar pedidos','Poner todas las cantidades a pedir en 0',"resetPedidos()",'peligro']
+  ].filter(Boolean);
+  var h='';
+  items.forEach(function(it){
+    h+='<button class="act-item'+(it[4]?' '+it[4]:'')+'" onclick="cerrar(\'mAcciones\');setTimeout(function(){'+it[3].replace(/"/g,'&quot;')+'},200)"><span class="ai">'+it[0]+'</span><span>'+it[1]+'<span class="ad">'+it[2]+'</span></span></button>';
+  });
+  document.getElementById('accionesBody').innerHTML=h;
+  document.getElementById('mAcciones').style.display='flex';
+}
 </script>
 </body>
 </html>
