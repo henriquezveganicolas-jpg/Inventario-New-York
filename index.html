@@ -431,6 +431,39 @@ input.pq-n{width:48px;height:34px;background:rgba(0,0,0,.25);border:none;color:v
   input.pq-n{width:56px;height:46px;font-size:17px!important;padding:0}
   .pr-pres{font-size:12px}
 }
+
+/* Pedido automático */
+.auto-row{display:flex;align-items:center;gap:10px;margin-top:9px;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.28);border-radius:12px;padding:7px 8px 7px 10px}
+.auto-row.off{background:var(--dark3);border-color:var(--border)}
+.auto-sw{position:relative;flex-shrink:0;width:46px;height:28px;border-radius:14px;border:none;background:#3A3226;cursor:pointer;transition:background .2s}
+.auto-sw.on{background:#2563EB}
+.auto-knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.auto-sw.on .auto-knob{transform:translateX(18px)}
+.auto-txt{flex:1;min-width:0;cursor:pointer;line-height:1.25}
+.auto-txt b{display:block;font-size:13px;color:#93C5FD}
+.auto-row.off .auto-txt b{color:var(--muted)}
+.auto-txt span{font-size:11px;color:var(--muted)}
+.auto-recalc{flex-shrink:0;background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.4);border-radius:9px;color:#93C5FD;font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer}
+.auto-tag{display:inline-block;font-size:8px;font-weight:800;letter-spacing:.06em;color:#fff;background:#2563EB;border-radius:4px;padding:1px 4px;margin-left:3px;vertical-align:1px}
+/* Unificado: botones por proveedor */
+.pv-head{display:flex!important;align-items:center;justify-content:space-between;gap:8px}
+.pv-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-n{font-size:10px;color:var(--muted);font-weight:600;margin-left:2px}
+.pv-acts{display:flex;gap:6px;flex-shrink:0}
+.pv-btn{background:var(--dark3);border:1px solid rgba(217,119,6,.45);border-radius:8px;color:var(--gold4);font-size:12px;font-weight:700;padding:5px 9px;cursor:pointer;letter-spacing:0;white-space:nowrap}
+.pv-btn.w{border-color:rgba(74,222,128,.45);color:#4ADE80;background:rgba(22,101,52,.25)}
+.pv-btn.ok{background:#166534;color:#fff;border-color:#16A34A}
+@media (max-width:700px){
+  .auto-row{padding:8px 8px 8px 10px}
+  .auto-sw{width:52px;height:32px;border-radius:16px}
+  .auto-knob{width:26px;height:26px}
+  .auto-sw.on .auto-knob{transform:translateX(20px)}
+  .auto-txt b{font-size:14px}.auto-txt span{font-size:12px}
+  .auto-recalc{min-height:40px;font-size:13px}
+  .auto-tag{font-size:9px}
+  .pv-btn{min-width:44px;min-height:40px;font-size:16px;padding:4px 10px}
+  .pv-l{display:none}
+}
 </style>
 
 <script>
@@ -504,6 +537,11 @@ input.pq-n{width:48px;height:34px;background:rgba(0,0,0,.25);border:none;color:v
       </div>
     </div>
     <div class="kpi-row" id="kpis"></div>
+    <div class="auto-row" id="autoRow">
+      <button class="auto-sw" id="autoSw" onclick="toggleAutoPedido()" role="switch" aria-checked="true"><span class="auto-knob"></span></button>
+      <div class="auto-txt" onclick="toggleAutoPedido()"><b>🤖 Pedido automático</b><span id="autoSub">Pedir = stock sugerido − stock</span></div>
+      <button class="auto-recalc" id="autoRecalc" onclick="recalcularPedidoAuto()">↻ Recalcular</button>
+    </div>
     <div class="borr-info" id="borradorInfo" style="display:none"></div>
     </div>
   </div>
@@ -1516,6 +1554,7 @@ async function entrarArea(areaId){
   if(btnSh) btnSh.style.display=(sesion&&(sesion.admin||sesion.ver_sheets))?'inline-flex':'none';
   document.getElementById('searchInput').value='';
   await cargarInventario();
+  _pintarAuto();
   buscarBorrador(areaId);
   sembrarArea(areaId).catch(function(e){console.warn(e);});
 }
@@ -1618,6 +1657,7 @@ async function cargarInventario(){
       i.c=canonCat(i.c);
       i.pr=canonProv(i.pr);
       i.s=toNum(i.s); i.p=toNum(i.p); i.ss=toNum(i.ss); i.cmin=toNum(i.cmin);
+      i._ak=i.s+'|'+i.ss;
       i.tc=(i.tc===''||i.tc==null)?3:toNum(i.tc); i.tb=(i.tb===''||i.tb==null)?8:toNum(i.tb); i.ts=(i.ts===''||i.ts==null)?25:toNum(i.ts);
       var _b=(ITEMS_BASE[areaActual.id]||[]).find(function(x){return x.id===i.id;});
       if(_b && toNum(i.cmin)>0 && i.palt && claveTxt(i.pr)===claveTxt(i.palt) && _b.pr && claveTxt(_b.pr)!==claveTxt(i.palt)){ i.pr=canonProv(_b.pr); }
@@ -1673,6 +1713,7 @@ async function sincronizarTodos(){
 
 
 async function persistir(item){
+  _autoCalc(item);
   try{
     var payload = {
       nombre:item.n||'',
@@ -2516,7 +2557,7 @@ function renderLista(){
           html+='<div class="cv" style="color:'+st.co+'"'+(puEd?' onclick="editDir('+item.id+',\'s\')"':'')+'>'+fmtNum(item.s)+'</div>';
           html+='<button class="cb"'+(puEd?'':' disabled')+' onclick="chg('+item.id+',\'s\',1)">+</button>';
           html+='</div></div>';
-          html+='<div class="ctr-box"><div class="ctr-lbl g">Pedir</div><div class="ctr">';
+          html+='<div class="ctr-box"><div class="ctr-lbl g">Pedir'+(_autoOn()&&item.ss>0?' <span class="auto-tag" title="Se calcula solo: sugerido '+fmtNum(item.ss)+' − stock">AUTO</span>':'')+'</div><div class="ctr">';
           html+='<button class="cb g"'+(puEd?'':' disabled')+' onclick="chg('+item.id+',\'p\',-1)">−</button>';
           html+='<div class="cv g"'+(puEd?' onclick="editDir('+item.id+',\'p\')"':'')+'>'+fmtNum(item.p)+'</div>';
           html+='<button class="cb g"'+(puEd?'':' disabled')+' onclick="chg('+item.id+',\'p\',1)">+</button>';
@@ -3419,7 +3460,10 @@ function renderVistaUnif(){
   else if(ordenUnif==='proveedor'){
     var grp={};items.forEach(function(i,idx){var k=i.pr||'Sin proveedor';if(!grp[k])grp[k]=[];grp[k].push({i:i,idx:idx});});
     Object.keys(grp).sort().forEach(function(pv){
-      h+='<div class="ped-prov" style="color:var(--gold4);background:rgba(217,119,6,.12)">'+pv.toUpperCase()+'</div>';
+      var nPv=grp[pv].filter(function(e){return e.i.p>0;}).length;
+      h+='<div class="ped-prov pv-head" style="color:var(--gold4);background:rgba(217,119,6,.12)"><span class="pv-name">🏪 '+_esc(pv).toUpperCase()+' <span class="pv-n">'+nPv+'</span></span>';
+      h+='<span class="pv-acts"><button class="pv-btn" data-pv="'+_esc(pv)+'" onclick="copiarProvUnif(this)" title="Copiar solo el pedido de '+_esc(pv)+'" aria-label="Copiar pedido de '+_esc(pv)+'">📋<span class="pv-l"> Copiar</span></button>';
+      h+='<button class="pv-btn w" data-pv="'+_esc(pv)+'" onclick="whatsappProvUnif(this)" title="Enviar solo el pedido de '+_esc(pv)+' por WhatsApp" aria-label="Enviar pedido de '+_esc(pv)+' por WhatsApp">💬<span class="pv-l"> Enviar</span></button></span></div>';
       grp[pv].forEach(function(e){h+=renderItem(e.i,e.idx);});
     });
   } else if(ordenUnif==='area'){
@@ -4110,6 +4154,82 @@ async function restaurarCantidadesPedido(id){
   showToast('↩ Cantidades restauradas'+(faltan?' ('+faltan+' insumos ya no existen)':''));
 }
 
+
+// ════════════════ PEDIDO AUTOMÁTICO ════════════════
+// Pedir = stock sugerido − stock actual (solo insumos con stock sugerido > 0).
+// Se recalcula cuando cambia el stock o el sugerido; editar "Pedir" a mano sigue funcionando.
+function _autoKey(){ return 'nybar_autoped_'+(areaActual?areaActual.id:''); }
+function _autoOn(){ try{ return localStorage.getItem(_autoKey())!=='0'; }catch(e){ return true; } }
+function _autoValor(i){ return Math.max(0,Math.round((toNum(i.ss)-toNum(i.s))*1000)/1000); }
+function _autoCalc(item){
+  if(!item) return;
+  var k=toNum(item.s)+'|'+toNum(item.ss);
+  if(_autoOn() && toNum(item.ss)>0 && item._ak!==undefined && item._ak!==k){ item.p=_autoValor(item); }
+  item._ak=k;
+}
+function _pintarAuto(){
+  var on=_autoOn(), sw=document.getElementById('autoSw'), row=document.getElementById('autoRow');
+  if(!sw) return;
+  sw.classList.toggle('on',on); sw.setAttribute('aria-checked',on?'true':'false');
+  row.classList.toggle('off',!on);
+  var conSug=(data||[]).filter(function(i){return toNum(i.ss)>0;}).length;
+  document.getElementById('autoSub').textContent=on
+    ?'Pedir = sugerido − stock · '+conSug+(conSug===1?' insumo':' insumos')+' con sugerido'
+    :'Desactivado: las cantidades a pedir son manuales';
+  document.getElementById('autoRecalc').style.display=on?'':'none';
+}
+function toggleAutoPedido(){
+  var on=!_autoOn();
+  try{ localStorage.setItem(_autoKey(),on?'1':'0'); }catch(e){}
+  _pintarAuto(); _renderSuave();
+  if(on){
+    if(confirm('Pedido automático ACTIVADO.\n\n¿Recalcular ahora todas las cantidades a pedir desde el stock sugerido?\n\n(Si eliges Cancelar, se irán ajustando a medida que cambies el stock.)')) recalcularPedidoAuto(true);
+    else showToast('🤖 Pedido automático activado');
+  } else showToast('✋ Pedido automático desactivado');
+}
+function recalcularPedidoAuto(sinConfirmar){
+  if(!puedeEditar()) return;
+  var cambios=(data||[]).filter(function(i){ return toNum(i.ss)>0 && toNum(i.p)!==_autoValor(i); });
+  if(!cambios.length){ showToast('✅ Ya está todo calculado'); return; }
+  if(!sinConfirmar && !confirm('¿Recalcular '+cambios.length+' cantidades a pedir con "sugerido − stock"?\n\nSe reemplazan las cantidades escritas a mano en esos insumos.')) return;
+  cambios.forEach(function(i){ i.p=_autoValor(i); i._ak=toNum(i.s)+'|'+toNum(i.ss); persistir(i); });
+  marcarCambio(); _renderSuave(); _pintarAuto();
+  showToast('🤖 '+cambios.length+(cambios.length===1?' cantidad recalculada':' cantidades recalculadas'));
+}
+
+// ════════════════ UNIFICADO: copiar / enviar por proveedor ════════════════
+function _textoProveedorUnif(pv){
+  var items=itemsUnificados.filter(function(i){ return i.p>0 && (i.pr||'Sin proveedor')===pv; });
+  var f=new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'});
+  var t='★ NEW YORK BAR — PEDIDO '+pv.toUpperCase()+'\n📅 '+f+'\n\n';
+  items.forEach(function(i){ t+=_lineaUnif(i); t+=_notaTxt(i); });
+  var ng=normTxt((document.getElementById('unifNotaGeneral')||{value:''}).value);
+  if(ng) t+='\n📝 NOTA: '+ng+'\n';
+  return t;
+}
+function _copiarAlPortapapeles(t){
+  function viejo(){
+    var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0,t.length);
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta); return ok;
+  }
+  if(navigator.clipboard&&window.isSecureContext){ return navigator.clipboard.writeText(t).then(function(){return true;},function(){return viejo();}); }
+  return Promise.resolve(viejo());
+}
+function copiarProvUnif(btn){
+  var pv=btn.getAttribute('data-pv'), t=_textoProveedorUnif(pv);
+  _copiarAlPortapapeles(t).then(function(ok){
+    showToast(ok?'📋 Pedido de '+pv+' copiado':'❌ No se pudo copiar');
+    if(ok){ btn.classList.add('ok'); setTimeout(function(){btn.classList.remove('ok');},1200); }
+  });
+}
+function whatsappProvUnif(btn){
+  var pv=btn.getAttribute('data-pv');
+  window.open('https://wa.me/?text='+encodeURIComponent(_textoProveedorUnif(pv)),'_blank');
+}
+
 // ════════════════ iOS / TÁCTIL: comportamiento ════════════════
 (function(){
   var esMovil=function(){ return window.matchMedia('(max-width:700px)').matches; };
@@ -4219,6 +4339,8 @@ function abrirMenuAcciones(){
     ['🏷️','Categorías','Catálogo de categorías del área',"abrirCatCat()"],
     ['📅','Guardar snapshot de hoy','Foto del inventario actual',"guardarSnapshot()"],
     ['☁️','Sincronizar con el servidor','Reenviar todos los insumos del área',"sincronizarTodos()"],
+    ['🤖',_autoOn()?'Desactivar pedido automático':'Activar pedido automático','Pedir = stock sugerido − stock actual',"toggleAutoPedido()"],
+    ['↻','Recalcular pedido automático','Rehacer todas las cantidades desde el stock sugerido',"recalcularPedidoAuto()"],
     ['🔄','Reiniciar pedidos','Poner todas las cantidades a pedir en 0',"resetPedidos()",'peligro']
   ].filter(Boolean);
   var h='';
